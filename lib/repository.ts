@@ -27,6 +27,7 @@ const EVIDENCE_V2_KEY = "jobproof.v2.evidence";
 const EXPRESSIONS_V2_KEY = "jobproof.v2.expressions";
 const LEGACY_PLAN_STARTED_KEY = "jobproof.plan.started";
 const LEGACY_PLAN_TASKS_KEY = "jobproof.plan.tasks";
+const PLAN_MIGRATION_KEY = "jobproof.v2.planMigrationComplete";
 
 function createId() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
@@ -93,9 +94,11 @@ function writeCollection<T>(key: string, itemSchema: z.ZodType<T>, items: T[]) {
 
 function migrateLegacyPlan(): Plan[] {
   if (typeof window === "undefined") return [];
+  if (window.localStorage.getItem(PLAN_MIGRATION_KEY) === "true") return [];
   const started = window.localStorage.getItem(LEGACY_PLAN_STARTED_KEY) === "true";
   let completed: Record<string, boolean> = {};
   try { completed = JSON.parse(window.localStorage.getItem(LEGACY_PLAN_TASKS_KEY) || "{}"); } catch { completed = {}; }
+  window.localStorage.setItem(PLAN_MIGRATION_KEY, "true");
   if (!started && !Object.values(completed).some(Boolean)) return [];
   const now = new Date().toISOString();
   const plan: Plan = PlanSchema.parse({
@@ -177,6 +180,9 @@ export const planRepository = {
   save(plan: Plan) {
     const next = [...this.list().filter(item => item.id !== plan.id), PlanSchema.parse({ ...plan, updatedAt: new Date().toISOString() })];
     writeCollection(PLANS_V2_KEY, PlanSchema, next);
+  },
+  remove(id: string) {
+    writeCollection(PLANS_V2_KEY, PlanSchema, this.list().filter(item => item.id !== id));
   },
   updateTask(planId: string, taskId: string, status: Task["status"]): Plan | null {
     const plan = this.get(planId);

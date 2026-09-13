@@ -94,7 +94,8 @@ export const TaskSchema = z.object({
   estimatedMinutes: z.number().int().positive(),
   status: z.enum(["todo", "doing", "done"]),
   competencyKeys: z.array(CompetencyKeySchema).default([]),
-  jdQuote: z.string().default("")
+  jdQuote: z.string().default(""),
+  acceptanceCriteria: z.array(z.string()).default([])
 });
 
 export const PlanSchema = z.object({
@@ -109,7 +110,10 @@ export const PlanSchema = z.object({
   profileFingerprint: z.string().default(""),
   analysisFingerprint: z.string().default(""),
   startedAt: z.string().nullable().default(null),
-  updatedAt: z.string().default("")
+  updatedAt: z.string().default(""),
+  theme: z.string().default(""),
+  jobTitle: z.string().default(""),
+  totalMinutes: z.number().int().nonnegative().default(0)
 });
 
 export const EvidenceSchema = z.object({

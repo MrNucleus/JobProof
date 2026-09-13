@@ -3,12 +3,23 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { competencyCatalog, defaultProfile, recommendedJobs } from "@/lib/data";
-import { UserProfile } from "@/lib/types";
-import { loadProfile } from "@/lib/repository";
+import { JobAnalysis, Plan, UserProfile } from "@/lib/types";
+import { loadAnalysis, loadProfile, planRepository } from "@/lib/repository";
 
 export default function DashboardPage() {
   const [profile,setProfile] = useState<UserProfile>(defaultProfile);
-  useEffect(()=>setProfile(loadProfile()),[]);
+  const [currentPlan,setCurrentPlan] = useState<Plan|null>(null);
+  const [analysis,setAnalysis] = useState<JobAnalysis|null>(null);
+  useEffect(()=>{
+    function sync(){
+      setProfile(loadProfile());
+      setAnalysis(loadAnalysis());
+      setCurrentPlan(planRepository.list().sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt))[0]||null);
+    }
+    sync();
+    window.addEventListener("focus",sync);
+    return()=>window.removeEventListener("focus",sync);
+  },[]);
   const completion = useMemo(()=>Math.round(profile.competencies.filter(c=>c.level>0).length/profile.competencies.length*100),[profile]);
   const topSkills = [...profile.competencies].sort((a,b)=>(b.level*2+b.evidenceLevel)-(a.level*2+a.evidenceLevel)).slice(0,4);
   return <>
@@ -24,8 +35,8 @@ export default function DashboardPage() {
     </div>
     <div className="section-head"><h2>正在进行</h2><p>把能力缺口变成可完成的任务包</p></div>
     <div className="dash-grid">
-      <section className="card panel"><div className="card-head"><h3>7 天用户访谈微项目</h3><Link className="btn btn-link" href="/plan">继续项目 →</Link></div><div className="plan-box"><b>为校园二手交易产品做需求验证</b><div className="muted">目标：用户访谈 · 需求提炼 · 结论表达</div></div><div className="task-row"><span className="check done">✓</span><div><b>明确对象和 6 个问题</b><small>已完成</small></div><span>完成</span></div><div className="task-row"><span className="check"></span><div><b>完成 5 次访谈并整理共性</b><small>截止明天</small></div><span>进行中</span></div></section>
-      <section className="card panel"><div className="card-head"><h3>为你匹配的 JD</h3><Link className="btn btn-link" href="/jobs">查看分析 →</Link></div>{recommendedJobs.map(job=><div className="job-row" key={job.title}><div><b>{job.title}</b><small>{job.company} · {job.city}</small><div className="tags">{job.tags.map(tag=><span className="tag" key={tag}>{tag}</span>)}</div></div><span className="match-score">{job.score}%</span></div>)}</section>
+      <section className="card panel"><div className="card-head"><h3>{currentPlan?.title||"还没有微项目"}</h3><Link className="btn btn-link" href="/plan">{currentPlan?"继续项目":"创建计划"} →</Link></div>{currentPlan?<><div className="plan-box"><b>{currentPlan.goal}</b><div className="muted">{currentPlan.theme} · {currentPlan.tasks.filter(task=>task.status==="done").length}/{currentPlan.tasks.length} 项完成 · 总预算 {currentPlan.totalMinutes||currentPlan.tasks.reduce((sum,task)=>sum+task.estimatedMinutes,0)} 分钟</div></div>{currentPlan.tasks.slice(0,3).map(task=><div className="task-row" key={task.id}><span className={"check "+(task.status==="done"?"done":"")}>{task.status==="done"?"✓":""}</span><div><b>{task.title}</b><small>{task.day} · 预计 {task.estimatedMinutes} 分钟</small></div><span>{task.status==="done"?"完成":task.status==="doing"?"进行中":"待开始"}</span></div>)}</>:<div className="empty-state"><p>分析一份目标 JD 后，选择能力缺口创建 7/14 天计划。</p><Link className="btn btn-primary" href="/jobs">分析目标 JD</Link></div>}</section>
+      <section className="card panel"><div className="card-head"><h3>{analysis?"最近分析的 JD":"为你匹配的 JD"}</h3><Link className="btn btn-link" href="/jobs">查看分析 →</Link></div>{analysis?<div className="job-row"><div><b>{analysis.title}</b><small>{analysis.summary}</small><div className="tags">{analysis.competencies.slice(0,3).map(item=><span className="tag" key={item.key}>{item.name}</span>)}{analysis.breakdown&&<span className="tag">{analysis.breakdown.confidence==="high"?"高":analysis.breakdown.confidence==="medium"?"中":"低"}置信度</span>}</div></div><span className="match-score">{analysis.matchScore}%</span></div>:recommendedJobs.map(job=><div className="job-row" key={job.title}><div><b>{job.title}</b><small>{job.company} · {job.city}</small><div className="tags">{job.tags.map(tag=><span className="tag" key={tag}>{tag}</span>)}</div></div><span className="match-score">{job.score}%</span></div>)}</section>
     </div>
   </>;
 }
