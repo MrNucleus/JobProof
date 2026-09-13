@@ -8,6 +8,8 @@ export async function GET(request: Request) {
   const cookieState = request.headers.get("cookie")?.match(new RegExp(`${STATE_COOKIE}=([^;]+)`))?.[1];
   if (!await consumeOAuthState(state, cookieState)) return NextResponse.redirect(accountUrl(request, "error=invalid_state"));
   const code = url.searchParams.get("authorization_code") || url.searchParams.get("code") || "";
+  const providerError = url.searchParams.get("error");
+  if (providerError && !code) return NextResponse.redirect(accountUrl(request, `error=${encodeURIComponent(`知乎授权未完成：${providerError}`)}`));
   if (!code || code.length > 2048) return NextResponse.redirect(accountUrl(request, "error=missing_code"));
   try {
     const token = await exchangeAuthorizationCode(code), user = await fetchZhihuUser(token.accessToken), sessionId = await createSession(token, user);

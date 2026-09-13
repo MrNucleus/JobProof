@@ -26,15 +26,16 @@ export async function createOAuthState() {
 }
 
 export async function consumeOAuthState(state: string, cookieState: string | undefined) {
-  if (!state || !cookieState || state !== cookieState) return false;
+  const candidate = state || cookieState || "";
+  if (!candidate || !cookieState || (state && state !== cookieState)) return false;
   try {
     const store = sharedStore();
-    const record = await store.getWithMetadata(`state/${state}`, { type: "json", consistency: "strong" }) as { data?: { expiresAt?: number; consumedAt?: number | null }; etag?: string } | null;
+    const record = await store.getWithMetadata(`state/${candidate}`, { type: "json", consistency: "strong" }) as { data?: { expiresAt?: number; consumedAt?: number | null }; etag?: string } | null;
     if (!record || typeof record.data?.expiresAt !== "number" || record.data.expiresAt <= Date.now() || record.data.consumedAt) return false;
-    const result = await store.setJSON(`state/${state}`, { ...record.data, consumedAt: Date.now() }, { onlyIfMatch: record.etag });
+    const result = await store.setJSON(`state/${candidate}`, { ...record.data, consumedAt: Date.now() }, { onlyIfMatch: record.etag });
     return result.modified;
   } catch {
-    const expiresAt = states.get(state); states.delete(state);
+    const expiresAt = states.get(candidate); states.delete(candidate);
     return Boolean(expiresAt && expiresAt > Date.now());
   }
 }
