@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import UserMenu from "@/components/UserMenu";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -20,7 +21,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 <Link href="/dashboard">个人中心</Link>
                 <Link href="/jobs">分析 JD</Link>
                 <Link href="/plan">微项目</Link>
+                <Link href="/zhihu-hot">知乎热榜</Link>
               </div>
+              <UserMenu />
             </nav>
             {children}
           </div>
