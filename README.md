@@ -35,12 +35,12 @@ npm run dev
 
 ```text
 ZHIHU_ACCESS_SECRET=<开放平台 Access Secret>
-ZHIHU_OAUTH_APP_ID=200
+ZHIHU_OAUTH_APP_ID=469
 ZHIHU_OAUTH_APP_KEY=<OAuth App Key>
-ZHIHU_OAUTH_REDIRECT_URI=http://localhost:3000/api/auth/zhihu/callback
+ZHIHU_OAUTH_REDIRECT_URI=https://zhihujobproof.netlify.app/api/auth/zhihu/callback
 ```
 
-OAuth 回调地址必须与知乎赛事平台登记值完全一致。`ZHIHU_ACCESS_SECRET`、`ZHIHU_OAUTH_APP_KEY` 和用户 OAuth Token 只在服务端使用，不得提交到 Git 或暴露给浏览器。当前 MVP 使用进程内服务端会话，适合单实例 Node 部署；多实例部署应将会话存储替换为 Redis 或数据库。
+OAuth 回调地址必须与知乎赛事平台登记值完全一致。`ZHIHU_ACCESS_SECRET`、`ZHIHU_OAUTH_APP_KEY` 和用户 OAuth Token 只在服务端使用，不得提交到 Git 或暴露给浏览器。当前 MVP 使用进程内服务端会话，适合单实例 Node 部署；多实例部署应将会话存储替换为 Redis 或数据库。Netlify 上线前必须在站点环境变量中配置真实的 `ZHIHU_OAUTH_APP_KEY`；读取授权用户的关注和创作列表还需要配置 `ZHIHU_ACCESS_SECRET`。
 
 相关页面：
 
