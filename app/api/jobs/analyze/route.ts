@@ -4,6 +4,7 @@ import { competencyCatalog } from "@/lib/data";
 import { CompetencyKey, JobAnalysis, Level, UserProfile } from "@/lib/types";
 import { UserProfileSchema } from "@/lib/domain";
 import { profileFingerprint } from "@/lib/profile-fingerprint";
+import { calculateMatch } from "@/lib/matching";
 
 const MAX_BODY_BYTES = 256 * 1024;
 const RATE_LIMIT_WINDOW_MS = 60_000;
@@ -69,12 +70,12 @@ export async function POST(request:Request){
   const {jdText,profile}=parsed.data as {jdText:string;profile:UserProfile};
   const found=rules.flatMap(rule=>{const term=rule.terms.find(t=>jdText.toLowerCase().includes(t.toLowerCase()));if(!term)return[];const cat=competencyCatalog.find(c=>c.key===rule.key)!;const user=profile.competencies.find(c=>c.key===rule.key);return[{key:rule.key,name:cat.name,importance:/负责|熟练|必须|要求/.test(sentenceFor(jdText,term))?"must" as const:"bonus" as const,jdQuote:sentenceFor(jdText,term),userLevel:(user?.level||0) as Level,gap:Math.max(0,2-(user?.level||0))}];});
   const competencies=found.length?found:rules.slice(0,3).map(rule=>{const cat=competencyCatalog.find(c=>c.key===rule.key)!;const user=profile.competencies.find(c=>c.key===rule.key);return{key:rule.key,name:cat.name,importance:"bonus" as const,jdQuote:"JD 描述较模糊，建议人工确认",userLevel:(user?.level||0) as Level,gap:Math.max(0,2-(user?.level||0))};});
-  const weighted=competencies.reduce((sum,item)=>sum+Math.min(item.userLevel,2)/2,0)/competencies.length;
-  const evidence=competencies.reduce((sum,item)=>sum+(profile.competencies.find(c=>c.key===item.key)?.evidenceLevel||0)/3,0)/competencies.length;
-  const score=Math.round((weighted*.65+evidence*.35)*100);
+  const { score, breakdown } = calculateMatch(jdText, profile, competencies);
   const strengths=competencies.filter(c=>c.gap===0).map(c=>`${c.name}达到可独立完成小任务的水平`);
   const gaps=competencies.filter(c=>c.gap>0).map(c=>`${c.name}还缺少可验证成果`);
-  const result:JobAnalysis={title:jdText.split(/\n/).find(Boolean)?.slice(0,30)||"目标岗位",summary:`识别到 ${competencies.length} 项核心能力。当前画像与该岗位的基础匹配度为 ${score}%。`,competencies,matchScore:score,strengths,gaps,nextAction:gaps.length?`优先用 7 天微项目补强“${competencies.find(c=>c.gap>0)?.name}”，完成后再投递。`:"主要能力已经覆盖，可以开始针对 JD 整理简历证据。",profileFingerprint:profileFingerprint(profile),analyzedAt:new Date().toISOString()};
+  const analyzedAt = new Date().toISOString();
+  const title = jdText.split(/\n/).find(Boolean)?.slice(0,30)||"目标岗位";
+  const result:JobAnalysis={title,summary:`识别到 ${competencies.length} 项核心能力。综合能力、证据、兴趣和约束后，当前匹配度为 ${score}%。`,competencies,matchScore:score,strengths,gaps,nextAction:gaps.length?`优先用 7 天微项目补强“${competencies.find(c=>c.gap>0)?.name}”，完成后再投递。`:"主要能力已经覆盖，可以开始针对 JD 整理简历证据。",profileFingerprint:profileFingerprint(profile),analyzedAt,breakdown,job:{id:crypto.randomUUID(),source:"manual",sourceUrl:"",company:"",title,city:"",rawText:jdText,createdAt:analyzedAt}};
   return jsonResponse(result);
 }
 
