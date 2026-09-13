@@ -205,6 +205,9 @@ export const evidenceRepository = {
     const evidence = EvidenceSchema.parse({ ...input, id: createId(), createdAt: new Date().toISOString(), status: "draft" });
     this.save(evidence);
     return evidence;
+  },
+  remove(id: string) {
+    writeCollection(EVIDENCE_V2_KEY, EvidenceSchema, this.list().filter(item => item.id !== id));
   }
 };
 

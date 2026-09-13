@@ -118,6 +118,8 @@ export const PlanSchema = z.object({
 
 export const EvidenceSchema = z.object({
   id: z.string().uuid(),
+  planId: z.string().uuid().nullable(),
+  taskId: z.string().uuid().nullable(),
   title: z.string(),
   competencyKeys: z.array(CompetencyKeySchema),
   background: z.string(),
@@ -127,7 +129,15 @@ export const EvidenceSchema = z.object({
   reflection: z.string(),
   url: z.string().url().or(z.literal("")),
   status: z.enum(["draft", "needs_more_facts", "ready"]),
-  createdAt: z.string()
+  createdAt: z.string(),
+  completeness: z.object({
+    background: z.boolean(),
+    task: z.boolean(),
+    action: z.boolean(),
+    result: z.boolean(),
+    reflection: z.boolean()
+  }),
+  completenessScore: z.number().int().min(0).max(100)
 });
 
 export const ExpressionSchema = z.object({

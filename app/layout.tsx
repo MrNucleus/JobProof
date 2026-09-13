@@ -21,6 +21,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 <Link href="/dashboard">个人中心</Link>
                 <Link href="/jobs">分析 JD</Link>
                 <Link href="/plan">微项目</Link>
+                <Link href="/evidence">证据</Link>
               </div>
               <AuthMenu />
             </nav>
