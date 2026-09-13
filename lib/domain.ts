@@ -46,6 +46,31 @@ export const JobCompetencySchema = z.object({
   gap: z.number().int().min(0).max(3)
 });
 
+export const JobSchema = z.object({
+  id: z.string().uuid(),
+  source: z.string().min(1).max(40),
+  sourceUrl: z.string().url().or(z.literal("")),
+  company: z.string().max(120),
+  title: z.string().min(1).max(120),
+  city: z.string().max(80),
+  rawText: z.string().min(20).max(10000),
+  createdAt: z.string()
+});
+
+export const MatchBreakdownSchema = z.object({
+  coverage: z.number().min(0).max(100),
+  evidence: z.number().min(0).max(100),
+  preference: z.number().min(0).max(100),
+  constraints: z.number().min(0).max(100),
+  confidence: z.enum(["high", "medium", "low"]),
+  explanations: z.object({
+    coverage: z.string(),
+    evidence: z.string(),
+    preference: z.string(),
+    constraints: z.string()
+  })
+});
+
 export const JobAnalysisSchema = z.object({
   title: z.string(),
   summary: z.string(),
@@ -55,7 +80,9 @@ export const JobAnalysisSchema = z.object({
   gaps: z.array(z.string()),
   nextAction: z.string(),
   profileFingerprint: z.string(),
-  analyzedAt: z.string()
+  analyzedAt: z.string(),
+  job: JobSchema.optional(),
+  breakdown: MatchBreakdownSchema.optional()
 });
 
 export const TaskSchema = z.object({
@@ -65,7 +92,9 @@ export const TaskSchema = z.object({
   instruction: z.string(),
   deliverable: z.string(),
   estimatedMinutes: z.number().int().positive(),
-  status: z.enum(["todo", "doing", "done"])
+  status: z.enum(["todo", "doing", "done"]),
+  competencyKeys: z.array(CompetencyKeySchema).default([]),
+  jdQuote: z.string().default("")
 });
 
 export const PlanSchema = z.object({
@@ -74,7 +103,13 @@ export const PlanSchema = z.object({
   targetCompetency: CompetencyKeySchema,
   durationDays: z.union([z.literal(7), z.literal(14)]),
   tasks: z.array(TaskSchema),
-  createdAt: z.string()
+  createdAt: z.string(),
+  goal: z.string().default(""),
+  status: z.enum(["draft", "active", "completed"]).default("draft"),
+  profileFingerprint: z.string().default(""),
+  analysisFingerprint: z.string().default(""),
+  startedAt: z.string().nullable().default(null),
+  updatedAt: z.string().default("")
 });
 
 export const EvidenceSchema = z.object({
@@ -106,6 +141,8 @@ export type CompetencyKey = z.infer<typeof CompetencyKeySchema>;
 export type CompetencyProfile = z.infer<typeof CompetencyProfileSchema>;
 export type UserProfile = z.infer<typeof UserProfileSchema>;
 export type JobCompetency = z.infer<typeof JobCompetencySchema>;
+export type Job = z.infer<typeof JobSchema>;
+export type MatchBreakdown = z.infer<typeof MatchBreakdownSchema>;
 export type JobAnalysis = z.infer<typeof JobAnalysisSchema>;
 export type Task = z.infer<typeof TaskSchema>;
 export type Plan = z.infer<typeof PlanSchema>;
