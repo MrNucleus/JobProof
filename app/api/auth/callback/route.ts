@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { exchangeAuthorizationCode, fetchZhihuUser, ZhihuOAuthError } from "@/lib/zhihu-oauth";
 import { consumeOAuthState, createSession, STATE_COOKIE, SESSION_COOKIE } from "@/lib/zhihu-session";
 export const runtime = "nodejs";
-function accountUrl(request: Request, query: string) { return new URL(`/account?${query}`, request.url); }
+function accountUrl(request: Request, query: string) {
+  const base = process.env.NEXT_PUBLIC_APP_URL?.trim() || new URL(request.url).origin;
+  return new URL(`/account?${query}`, base);
+}
 export async function GET(request: Request) {
   const url = new URL(request.url), state = url.searchParams.get("state") || "";
   const cookieState = request.headers.get("cookie")?.match(new RegExp(`${STATE_COOKIE}=([^;]+)`))?.[1];
