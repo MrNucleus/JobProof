@@ -3,18 +3,20 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { competencyCatalog, defaultProfile, recommendedJobs } from "@/lib/data";
-import { JobAnalysis, Plan, UserProfile } from "@/lib/types";
-import { loadAnalysis, loadProfile, planRepository } from "@/lib/repository";
+import { Evidence, JobAnalysis, Plan, UserProfile } from "@/lib/types";
+import { evidenceRepository, loadAnalysis, loadProfile, planRepository } from "@/lib/repository";
 
 export default function DashboardPage() {
   const [profile,setProfile] = useState<UserProfile>(defaultProfile);
   const [currentPlan,setCurrentPlan] = useState<Plan|null>(null);
   const [analysis,setAnalysis] = useState<JobAnalysis|null>(null);
+  const [evidence,setEvidence] = useState<Evidence[]>([]);
   useEffect(()=>{
     function sync(){
       setProfile(loadProfile());
       setAnalysis(loadAnalysis());
       setCurrentPlan(planRepository.list().sort((a,b)=>b.updatedAt.localeCompare(a.updatedAt))[0]||null);
+      setEvidence(evidenceRepository.list().sort((a,b)=>b.createdAt.localeCompare(a.createdAt)));
     }
     sync();
     window.addEventListener("focus",sync);
@@ -31,7 +33,7 @@ export default function DashboardPage() {
     <div className="section-head"><h2>我的能力画像</h2><p>自评能力与证据强度分开计算</p></div>
     <div className="dash-grid">
       <section className="card panel"><div className="card-head"><h3>核心能力</h3><Link className="btn btn-link" href="/onboarding">查看完整表格 →</Link></div>{topSkills.map(item=>{const cat=competencyCatalog.find(c=>c.key===item.key)!;const score=Math.round((item.level/3*.65+item.evidenceLevel/3*.35)*100);return <div className="skill-row" key={item.key}><div><b>{cat.name}</b><small>{item.evidenceLevel?"已有基础证据":"证据待补充"}</small></div><div className="skillbar"><i style={{width:`${score}%`}}/></div><span>{score}</span></div>})}</section>
-      <section className="card panel"><div className="card-head"><h3>最近的能力证据</h3><span className="muted">示例数据</span></div><div className="evidence-item"><b>校园二手平台竞品分析</b><small>竞品分析 · 5 个竞品 · 2 条建议</small></div><div className="evidence-item"><b>社团公众号迎新推文</b><small>内容策划 · 4 篇 · 最高阅读 1200</small></div><div className="evidence-item"><b>用户访谈微项目 · 待验证</b><small>建议访谈 5 人并保留原始记录</small></div></section>
+      <section className="card panel"><div className="card-head"><h3>最近的能力证据</h3><span className="muted">{evidence.length ? "本地保存" : "等待提交"}</span></div>{evidence.length ? evidence.slice(0,3).map(item=><Link className="evidence-item" href={"/evidence?evidenceId="+item.id} key={item.id}><b>{item.title}</b><small>{item.completenessScore}% 完整 · {item.status==="ready"?"可用于求职表达":item.status==="needs_more_facts"?"待补事实":"草稿"}</small></Link>) : <div className="empty-state"><p>完成微项目任务并提交成果后，会在这里形成能力证据。</p><Link className="btn btn-secondary" href="/evidence">去提交证据</Link></div>}</section>
     </div>
     <div className="section-head"><h2>正在进行</h2><p>把能力缺口变成可完成的任务包</p></div>
     <div className="dash-grid">
