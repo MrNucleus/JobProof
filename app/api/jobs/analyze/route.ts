@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { competencyCatalog } from "@/lib/data";
 import { CompetencyKey, JobAnalysis, Level, UserProfile } from "@/lib/types";
+import { profileFingerprint } from "@/lib/profile-fingerprint";
 
 const requestSchema = z.object({
   jdText: z.string().min(20).max(10000),
@@ -35,7 +36,8 @@ export async function POST(request:Request){
   const score=Math.round((weighted*.65+evidence*.35)*100);
   const strengths=competencies.filter(c=>c.gap===0).map(c=>`${c.name}达到可独立完成小任务的水平`);
   const gaps=competencies.filter(c=>c.gap>0).map(c=>`${c.name}还缺少可验证成果`);
-  const result:JobAnalysis={title:jdText.split(/\n/).find(Boolean)?.slice(0,30)||"目标岗位",summary:`识别到 ${competencies.length} 项核心能力。当前画像与该岗位的基础匹配度为 ${score}%。`,competencies,matchScore:score,strengths,gaps,nextAction:gaps.length?`优先用 7 天微项目补强“${competencies.find(c=>c.gap>0)?.name}”，完成后再投递。`:"主要能力已经覆盖，可以开始针对 JD 整理简历证据。"};
+  const result:JobAnalysis={title:jdText.split(/\n/).find(Boolean)?.slice(0,30)||"目标岗位",summary:`识别到 ${competencies.length} 项核心能力。当前画像与该岗位的基础匹配度为 ${score}%。`,competencies,matchScore:score,strengths,gaps,nextAction:gaps.length?`优先用 7 天微项目补强“${competencies.find(c=>c.gap>0)?.name}”，完成后再投递。`:"主要能力已经覆盖，可以开始针对 JD 整理简历证据。",profileFingerprint:profileFingerprint(profile),analyzedAt:new Date().toISOString()};
   return NextResponse.json(result);
 }
+
 

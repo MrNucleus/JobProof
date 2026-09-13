@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { competencyCatalog, defaultProfile, recommendedJobs } from "@/lib/data";
 import { UserProfile } from "@/lib/types";
-import { loadProfile } from "@/lib/storage";
+import { loadProfile } from "@/lib/repository";
 
 export default function DashboardPage() {
   const [profile,setProfile] = useState<UserProfile>(defaultProfile);
