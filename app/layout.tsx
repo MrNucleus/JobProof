@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
+import AuthMenu from "@/components/AuthMenu";
 
 export const metadata: Metadata = {
   title: "JobProof · 能力证据工坊",
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 <Link href="/jobs">分析 JD</Link>
                 <Link href="/plan">微项目</Link>
               </div>
+              <AuthMenu />
             </nav>
             {children}
           </div>
