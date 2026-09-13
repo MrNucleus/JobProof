@@ -34,3 +34,9 @@ npm run dev
 3. 添加真实岗位数据、证据上传与求职表达生成
 
 产品与技术文档位于仓库的 `docs` 目录（后续提交时可补入）。
+
+## 知乎 OAuth（可选）
+
+在 .env.local 或部署平台 Secret 中配置 ZHIHU_OAUTH_APP_ID、ZHIHU_OAUTH_APP_KEY、ZHIHU_OAUTH_REDIRECT_URI。关注和创作列表还需要服务端 ZHIHU_ACCESS_SECRET。真实密钥不会写入源码、Git、URL 或浏览器响应。回调地址必须与知乎开放平台登记值完全一致；本地默认是 http://localhost:3000/api/auth/callback，公网部署后应替换为 HTTPS 地址。
+
+开发演示阶段若未配置 OAuth，/account 会显示配置提示；正式联调需要用户本人完成知乎授权。当前会话使用进程内 Map，适合单实例演示，多实例部署请替换为 Supabase/Redis 等共享存储。

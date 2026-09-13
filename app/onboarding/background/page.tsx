@@ -4,7 +4,8 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { OnboardingProgress } from "@/components/OnboardingProgress";
 import { defaultProfile } from "@/lib/data";
-import { loadProfile, saveProfile } from "@/lib/storage.complete";
+import { loadProfile, saveProfile } from "@/lib/repository";
+import { onboardingRepository } from "@/lib/onboarding";
 import { UserProfile } from "@/lib/types";
 
 export default function BackgroundPage() {
@@ -25,6 +26,7 @@ export default function BackgroundPage() {
   function submit(event: FormEvent) {
     event.preventDefault();
     saveProfile(profile);
+    onboardingRepository.confirmBackground(profile);
     router.push("/onboarding/abilities");
   }
 
@@ -57,3 +59,5 @@ export default function BackgroundPage() {
     </>
   );
 }
+
+
