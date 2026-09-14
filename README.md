@@ -39,6 +39,14 @@ npm run dev
 2. 把规则分析替换为结构化 LLM Adapter
 3. 添加真实岗位数据、证据上传与求职表达生成
 
+## v0.3 云端数据基础
+
+当前分支已加入 Supabase SSR 客户端、Magic Link 服务端接口、画像云端读写 API、数据库迁移和 RLS 策略。未配置 Supabase 时，现有 localStorage 演示流程保持不变。
+
+- 配置文档：[docs/v0.3-云端数据基础.md](docs/v0.3-云端数据基础.md)
+- 数据库迁移：[supabase/migrations/202609140001_jobproof_v03.sql](supabase/migrations/202609140001_jobproof_v03.sql)
+- 画像 API：`GET/PUT /api/profile`
+
 产品与技术文档位于仓库的 `docs` 目录（后续提交时可补入）。
 
 ## 知乎 OAuth（可选）
