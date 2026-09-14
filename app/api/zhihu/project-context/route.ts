@@ -67,7 +67,12 @@ export async function POST(request: Request) {
   const parsed = RequestSchema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ message: "缺少有效的 JD 标题或目标能力。" }, { status: 400 });
   if (!isUserDataConfigured()) {
-    return NextResponse.json({ configured: false, candidates: [], message: "知乎搜索尚未配置 Access Secret，可继续使用自定义主题。" });
+    return NextResponse.json({
+      configured: false,
+      code: "missing_access_secret",
+      candidates: [],
+      message: "之所以出现这个提示，是因为当前运行环境没有配置 ZHIHU_ACCESS_SECRET。知乎登录用的 App Key 只负责 OAuth 登录，不能调用知乎站内搜索；请在本地 .env.local 或 Netlify 的 Production 环境变量中配置 Access Secret，然后重启或重新部署。"
+    });
   }
 
   const query = `${competencyQueries[parsed.data.targetCompetency]} ${parsed.data.jdTitle}${parsed.data.theme ? ` ${parsed.data.theme}` : ""}`.trim();

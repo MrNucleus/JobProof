@@ -31,6 +31,7 @@ export function InteractivePlan() {
   const [selectedSourceId, setSelectedSourceId] = useState("");
   const [sourceLoading, setSourceLoading] = useState(false);
   const [sourceError, setSourceError] = useState("");
+  const [sourceConfigMissing, setSourceConfigMissing] = useState(false);
 
   function sync() {
     const currentProfile = loadProfile();
@@ -89,6 +90,7 @@ export function InteractivePlan() {
     if (!target) return;
     setSourceLoading(true);
     setSourceError("");
+    setSourceConfigMissing(false);
     setSourceCandidates([]);
     setSelectedSourceId("");
     try {
@@ -100,6 +102,7 @@ export function InteractivePlan() {
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(typeof data.message === "string" ? data.message : "知乎选题检索失败，请稍后重试。");
       setSourceCandidates(Array.isArray(data.candidates) ? data.candidates : []);
+      setSourceConfigMissing(data.configured === false && data.code === "missing_access_secret");
       if (!data.candidates?.length) setSourceError(typeof data.message === "string" ? data.message : "暂时没有找到合适的知乎讨论，请换一个能力或自定义主题。");
     } catch (reason) {
       setSourceError(reason instanceof Error ? reason.message : "知乎选题检索失败，请稍后重试。");
@@ -153,7 +156,7 @@ export function InteractivePlan() {
       <div className="sync-banner"><span>✓</span><div><b>能力画像与目标 JD 已同步</b><small>{profile.name} · {analysis.title} · 下一步选择要补强的能力</small></div><Link href="/jobs">查看 JD</Link></div>
       <section className="card plan-config">
         <div className="plan-config-head"><div><span className="step-kicker">CREATE PROOF SPRINT</span><h1>创建一份真正做得完的微项目</h1><p>计划会绑定 JD 原文，所有任务总时长不超过你的投入预算。</p></div><div className="budget-card"><small>当前总预算</small><strong>{Math.round(budgetMinutes / 6) / 10} 小时</strong><span>{durationDays} 天 · 每周 {profile.weeklyHours} 小时</span></div></div>
-        <div className="config-section zhihu-config"><div className="zhihu-config-head"><div><b>2. 用知乎真实讨论生成项目主题</b><small>按需检索 3 条相关内容，只保存来源和短摘要</small></div><button type="button" className="btn btn-secondary" onClick={findZhihuTopics} disabled={sourceLoading}>{sourceLoading ? "检索中…" : "从知乎找 3 个选题"}</button></div>{sourceError && <div className="error zhihu-source-error">{sourceError}</div>}{sourceCandidates.length > 0 && <div className="zhihu-candidate-list">{sourceCandidates.map(candidate=><article key={candidate.id} className={`zhihu-candidate ${selectedSourceId===candidate.id?"selected":""}`}><button type="button" onClick={()=>selectSource(candidate)}><span className="candidate-label">{candidate.difficulty} · {candidate.source.authorName}</span><h3>{candidate.title}</h3><p>{candidate.problem}</p><small>{candidate.rationale}</small></button><a href={candidate.source.url} target="_blank" rel="noreferrer">查看知乎来源 ↗</a></article>)}</div>}</div>
+        <div className="config-section zhihu-config"><div className="zhihu-config-head"><div><span className="zhihu-kicker">推荐入口 · 知乎真实讨论</span><b>2. 用知乎真实讨论生成项目主题</b><small>按需检索 3 条相关内容，只保存来源和短摘要</small></div><button type="button" className="btn btn-primary zhihu-find-button" onClick={findZhihuTopics} disabled={sourceLoading}>{sourceLoading ? "正在检索知乎…" : "从知乎找 3 个选题 →"}</button></div>{sourceConfigMissing && <div className="zhihu-setup-guide"><div className="zhihu-setup-icon">!</div><div><h3>为什么会出现“未配置 Access Secret”？</h3><p>当前运行环境只配置了知乎 OAuth 登录信息，没有配置知乎开放平台搜索凭证。两者用途不同：OAuth 让用户登录知乎，<code>ZHIHU_ACCESS_SECRET</code> 才能让 JobProof 服务器调用站内搜索。</p><ol><li>本地开发：在 <code>.env.local</code> 添加 <code>ZHIHU_ACCESS_SECRET=你的Access Secret</code>，然后重启 <code>npm run dev</code>。</li><li>公网部署：在 Netlify 项目的 <b>Environment variables → Production</b> 添加同名变量，然后重新部署。</li><li>配置完成前仍可在下方输入自定义主题，其他微项目流程不受影响。</li></ol><a href="https://developer.zhihu.com/profile" target="_blank" rel="noreferrer">前往知乎开放平台申请或查看 Access Secret ↗</a></div></div>}{sourceError && !sourceConfigMissing && <div className="error zhihu-source-error">{sourceError}</div>}{sourceCandidates.length > 0 && <div className="zhihu-candidate-list">{sourceCandidates.map(candidate=><article key={candidate.id} className={`zhihu-candidate ${selectedSourceId===candidate.id?"selected":""}`}><button type="button" onClick={()=>selectSource(candidate)}><span className="candidate-label">{candidate.difficulty} · {candidate.source.authorName}</span><h3>{candidate.title}</h3><p>{candidate.problem}</p><small>{candidate.rationale}</small></button><a href={candidate.source.url} target="_blank" rel="noreferrer">查看知乎来源 ↗</a></article>)}</div>}</div>
         <div className="config-columns"><div className="config-section"><b>3. 选择冲刺周期</b><div className="duration-options"><button type="button" className={durationDays===7?"selected":""} onClick={()=>setDurationDays(7)}><strong>7 天</strong><small>快速做出第一版证据</small></button><button type="button" className={durationDays===14?"selected":""} onClick={()=>setDurationDays(14)}><strong>14 天</strong><small>包含两轮实践和同伴反馈</small></button></div></div><div className="config-section"><b>4. 选择真实项目主题</b><div className="theme-suggestions">{["校园二手交易","社团招新","校园学习工具","本地生活服务"].map(item=><button type="button" className={theme===item?"selected":""} key={item} onClick={()=>setTheme(item)}>{item}</button>)}</div><input className="theme-input" value={theme} maxLength={40} onChange={event=>setTheme(event.target.value)} aria-label="微项目主题" placeholder="也可以输入你自己的真实场景"/></div></div>
         <div className="plan-preview"><div><b>将生成</b><span>{durationDays===7?5:7} 个可验收任务</span></div><div><b>总时长上限</b><span>{budgetMinutes} 分钟</span></div><div><b>最终成果</b><span>案例 + 原始证据 + 讲解稿</span></div></div>
         <div className="actions"><Link className="btn btn-secondary" href="/jobs">← 返回 JD</Link><button type="button" className="btn btn-primary" onClick={createSelectedPlan} disabled={!theme.trim()}>生成我的 {durationDays} 天计划 →</button></div>
