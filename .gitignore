@@ -8,3 +8,7 @@ npm-debug.log*
 .DS_Store
 *.tsbuildinfo
 .vercel/
+public/chongplus-cover-output/
+public/jobproof-cover-16x9.png
+public/jobproof-cover-16x9-v*.png
+public/jobproof-icon-centered-large.png

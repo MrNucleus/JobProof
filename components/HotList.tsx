@@ -1,4 +1,6 @@
 "use client";
+/* External Zhihu thumbnails are rendered directly so arbitrary provider hosts are not proxied by the app. */
+/* eslint-disable @next/next/no-img-element */
 
 import { useCallback, useEffect, useState } from "react";
 import type { ZhihuHotItem } from "@/lib/zhihu-oauth";

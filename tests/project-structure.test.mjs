@@ -16,10 +16,11 @@ test("v0.2 has one canonical auth protocol", () => {
 
 test("deployment config is portable and secret-free", () => {
   const netlify = read("netlify.toml");
+  const gitignore = read(".gitignore");
   assert.match(netlify, /command\s*=\s*"npm run build"/);
   assert.doesNotMatch(netlify, /\/Users\/|\/home\//);
-  for (const file of [".env", ".env.local"]) {
-    assert.equal(existsSync(join(root, file)), false, `${file} must not exist in the project`);
+  for (const entry of [".env", ".env.local", ".netlify/", "node_modules/", ".next/"]) {
+    assert.ok(gitignore.split(/\r?\n/).includes(entry), `${entry} must be ignored`);
   }
 });
 

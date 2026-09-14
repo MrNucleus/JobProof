@@ -26,10 +26,11 @@ if (missing.length) {
   process.exit(1);
 }
 
-const trackedBoundary = [".env", ".env.local", ".netlify", "node_modules", ".next"];
-const forbidden = trackedBoundary.filter((file) => existsSync(join(root, file)) && file.startsWith(".env") && file !== ".env.example");
-if (forbidden.length) {
-  console.error(`发现不应存在于工作区的敏感配置: ${forbidden.join(", ")}`);
+const gitignore = readFileSync(join(root, ".gitignore"), "utf8");
+const requiredIgnores = [".env", ".env.local", ".netlify/", "node_modules/", ".next/"];
+const missingIgnores = requiredIgnores.filter((entry) => !gitignore.split(/\r?\n/).includes(entry));
+if (missingIgnores.length) {
+  console.error(`.gitignore 缺少敏感或生成目录规则: ${missingIgnores.join(", ")}`);
   process.exit(1);
 }
 

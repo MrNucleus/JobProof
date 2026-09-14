@@ -1,4 +1,6 @@
 "use client";
+/* External Zhihu avatars are rendered directly so arbitrary provider hosts are not proxied by the app. */
+/* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { useEffect, useState } from "react";
 type User = { uid: string; fullname: string; headline: string; description: string; avatarPath: string; url: string };
