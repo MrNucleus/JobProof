@@ -11,6 +11,7 @@ export type CloudProfileRow = {
   weekly_hours: number;
   role_families: string[];
   onboarding_status: string;
+  updated_at?: string;
 };
 
 export type CloudCompetencyRow = {
@@ -22,7 +23,7 @@ export type CloudCompetencyRow = {
   evidence_note: string;
 };
 
-export function toCloudProfile(userId: string, profile: UserProfile) {
+export function toCloudProfile(userId: string, profile: UserProfile, onboardingStatus = "in_progress") {
   return {
     user_id: userId,
     name: profile.name,
@@ -31,7 +32,7 @@ export function toCloudProfile(userId: string, profile: UserProfile) {
     cities: profile.cities,
     weekly_hours: profile.weeklyHours,
     role_families: profile.roleFamilies,
-    onboarding_status: "in_progress"
+    onboarding_status: onboardingStatus
   };
 }
 

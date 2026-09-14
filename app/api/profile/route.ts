@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { UserProfileSchema } from "@/lib/domain";
 import { fromCloudProfile, toCloudCompetencies, toCloudProfile, type CloudCompetencyRow, type CloudProfileRow } from "@/lib/supabase/profile";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
+
+const SaveProfileSchema = z.object({
+  profile: UserProfileSchema,
+  onboardingStatus: z.enum(["in_progress", "profile_ready", "first_action_selected"]).default("in_progress")
+}).strict();
 
 function json(data: unknown, status = 200) {
   return NextResponse.json(data, {
@@ -41,7 +47,7 @@ export async function GET() {
 
   try {
     const profile = fromCloudProfile(profileRow as CloudProfileRow, (competencyRows || []) as CloudCompetencyRow[]);
-    return json({ profile, onboardingStatus: profileRow.onboarding_status || "in_progress" });
+    return json({ profile, onboardingStatus: profileRow.onboarding_status || "in_progress", updatedAt: profileRow.updated_at });
   } catch {
     return json({ message: "云端画像数据格式异常，请重新保存。" }, 502);
   }
@@ -59,15 +65,15 @@ export async function PUT(request: Request) {
     return json({ message: "请求体必须是合法 JSON。" }, 400);
   }
   const candidate = body && typeof body === "object" && "profile" in body
-    ? (body as { profile?: unknown }).profile
-    : body;
-  const parsed = UserProfileSchema.safeParse(candidate);
+    ? body
+    : { profile: body, onboardingStatus: "in_progress" };
+  const parsed = SaveProfileSchema.safeParse(candidate);
   if (!parsed.success) return json({ message: "画像字段不完整或格式不正确。" }, 400);
 
-  const profile = parsed.data;
+  const { profile, onboardingStatus } = parsed.data;
   const { data: profileRow, error: profileError } = await context.supabase
     .from("profiles")
-    .upsert(toCloudProfile(context.user.id, profile), { onConflict: "user_id" })
+    .upsert(toCloudProfile(context.user.id, profile, onboardingStatus), { onConflict: "user_id" })
     .select("*")
     .single();
   if (profileError || !profileRow) return json({ message: "云端画像保存失败。" }, 502);
@@ -78,5 +84,5 @@ export async function PUT(request: Request) {
     .upsert(competencyRows, { onConflict: "profile_id,competency_key" });
   if (competencyError) return json({ message: "云端能力数据保存失败。" }, 502);
 
-  return json({ profile, onboardingStatus: profileRow.onboarding_status || "in_progress", syncedAt: new Date().toISOString() });
+  return json({ profile, onboardingStatus: profileRow.onboarding_status || "in_progress", syncedAt: profileRow.updated_at || new Date().toISOString() });
 }
