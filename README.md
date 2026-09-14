@@ -32,6 +32,15 @@ JobProof（能力证据工坊）帮助大学生把目标岗位 JD 转化为能�
 
 配置细节见 [v0.3 云端数据基础](docs/v0.3-云端数据基础.md)。当前版本尚未开启 localStorage 一键迁移、JD/计划/证据的云端 Repository 和私有文件 Storage。
 
+### v0.3.1 资源包
+
+可直接下载当前补丁的源码资源包，用于本地部署或上传到 Netlify：
+
+- [JobProof-v0.3.1-source.zip](release-assets/JobProof-v0.3.1-source.zip)
+- [SHA-256 校验值](release-assets/JobProof-v0.3.1-source.zip.sha256)
+
+资源包只包含源码、文档和依赖锁文件，不包含 `.env.local`、`node_modules`、`.next` 或任何 Git 历史。下载后解压，复制 `.env.example` 为 `.env.local`，再运行 `npm ci && npm run build`。
+
 ## 历史版本与时间线
 
 以下时间线根据仓库中的 Git 标签和发布提交整理，按版本首次形成的时间排列：
