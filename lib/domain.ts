@@ -74,6 +74,9 @@ export const MatchBreakdownSchema = z.object({
 export const JobAnalysisSchema = z.object({
   title: z.string(),
   summary: z.string(),
+  analysisMode: z.enum(["ai", "rules"]).optional(),
+  analysisNotice: z.string().max(300).optional(),
+  analysisModel: z.string().max(80).optional(),
   competencies: z.array(JobCompetencySchema),
   matchScore: z.number().min(0).max(100),
   strengths: z.array(z.string()),

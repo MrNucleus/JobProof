@@ -5,6 +5,13 @@ import { CompetencyKey, JobAnalysis, Level, UserProfile } from "@/lib/types";
 import { UserProfileSchema } from "@/lib/domain";
 import { profileFingerprint } from "@/lib/profile-fingerprint";
 import { calculateMatch } from "@/lib/matching";
+import {
+  analyzeJobWithLlm,
+  getLlmConfig,
+  isLlmConfigured,
+  LlmJobAnalyzerError,
+  type AiJobExtraction
+} from "@/lib/ai/job-analyzer";
 
 const MAX_BODY_BYTES = 256 * 1024;
 const RATE_LIMIT_WINDOW_MS = 60_000;
@@ -52,6 +59,59 @@ function consumeRateLimit(request: Request) {
 
 function sentenceFor(text:string,term:string){return text.split(/[。；;\n]/).map(s=>s.trim()).find(s=>s.toLowerCase().includes(term.toLowerCase()))||term;}
 
+function ruleBasedCompetencies(jdText: string, profile: UserProfile) {
+  const found=rules.flatMap(rule=>{const term=rule.terms.find(t=>jdText.toLowerCase().includes(t.toLowerCase()));if(!term)return[];const cat=competencyCatalog.find(c=>c.key===rule.key)!;const user=profile.competencies.find(c=>c.key===rule.key);return[{key:rule.key,name:cat.name,importance:/负责|熟练|必须|要求/.test(sentenceFor(jdText,term))?"must" as const:"bonus" as const,jdQuote:sentenceFor(jdText,term),userLevel:(user?.level||0) as Level,gap:Math.max(0,2-(user?.level||0))}];});
+  return found.length?found:rules.slice(0,3).map(rule=>{const cat=competencyCatalog.find(c=>c.key===rule.key)!;const user=profile.competencies.find(c=>c.key===rule.key);return{key:rule.key,name:cat.name,importance:"bonus" as const,jdQuote:"JD 描述较模糊，建议人工确认",userLevel:(user?.level||0) as Level,gap:Math.max(0,2-(user?.level||0))};});
+}
+
+function normalizeQuote(value: string) {
+  return value.replace(/\s+/g, "").replace(/[，。；：、“”‘’'"`]/g, "").toLowerCase();
+}
+
+function quoteIsSupported(jdText: string, quote: string) {
+  const normalizedJd = normalizeQuote(jdText);
+  const normalizedQuote = normalizeQuote(quote);
+  return normalizedQuote.length >= 4 && normalizedJd.includes(normalizedQuote);
+}
+
+function aiCompetencies(extraction: AiJobExtraction, jdText: string, profile: UserProfile) {
+  return extraction.competencies.flatMap(item => {
+    if (!quoteIsSupported(jdText, item.jdQuote)) return [];
+    const catalog = competencyCatalog.find(entry => entry.key === item.key);
+    if (!catalog) return [];
+    const user = profile.competencies.find(entry => entry.key === item.key);
+    return [{
+      key: item.key,
+      name: catalog.name,
+      importance: item.importance,
+      jdQuote: item.jdQuote,
+      userLevel: (user?.level || 0) as Level,
+      gap: Math.max(0, 2 - (user?.level || 0))
+    }];
+  });
+}
+
+async function tryLlmAnalysis(jdText: string) {
+  if (!isLlmConfigured()) return { extraction: null, notice: "未配置 AI 模型密钥，已使用规则分析；你仍可继续使用当前流程。" };
+  try {
+    return { extraction: await analyzeJobWithLlm(jdText), notice: "" };
+  } catch (error) {
+    if (error instanceof LlmJobAnalyzerError && error.kind === "invalid_output") {
+      try {
+        return { extraction: await analyzeJobWithLlm(jdText), notice: "" };
+      } catch {
+        // Fall through to the deterministic analyzer after one schema retry.
+      }
+    }
+    return {
+      extraction: null,
+      notice: error instanceof LlmJobAnalyzerError && error.kind === "unavailable"
+        ? "未配置 AI 模型密钥，已使用规则分析；你仍可继续使用当前流程。"
+        : "AI 分析暂时不可用，已自动回退到规则分析；你仍可继续使用当前流程。"
+    };
+  }
+}
+
 export async function POST(request:Request){
   const rate = consumeRateLimit(request);
   if (!rate.allowed) return jsonResponse({ message: "请求过于频繁，请稍后再试。" }, 429, { "Retry-After": String(rate.retryAfter) });
@@ -68,14 +128,18 @@ export async function POST(request:Request){
   const parsed=requestSchema.safeParse(payload);
   if(!parsed.success)return jsonResponse({message:"输入格式不正确。"},400);
   const {jdText,profile}=parsed.data as {jdText:string;profile:UserProfile};
-  const found=rules.flatMap(rule=>{const term=rule.terms.find(t=>jdText.toLowerCase().includes(t.toLowerCase()));if(!term)return[];const cat=competencyCatalog.find(c=>c.key===rule.key)!;const user=profile.competencies.find(c=>c.key===rule.key);return[{key:rule.key,name:cat.name,importance:/负责|熟练|必须|要求/.test(sentenceFor(jdText,term))?"must" as const:"bonus" as const,jdQuote:sentenceFor(jdText,term),userLevel:(user?.level||0) as Level,gap:Math.max(0,2-(user?.level||0))}];});
-  const competencies=found.length?found:rules.slice(0,3).map(rule=>{const cat=competencyCatalog.find(c=>c.key===rule.key)!;const user=profile.competencies.find(c=>c.key===rule.key);return{key:rule.key,name:cat.name,importance:"bonus" as const,jdQuote:"JD 描述较模糊，建议人工确认",userLevel:(user?.level||0) as Level,gap:Math.max(0,2-(user?.level||0))};});
+  const llm = await tryLlmAnalysis(jdText);
+  const aiMatches = llm.extraction ? aiCompetencies(llm.extraction, jdText, profile) : [];
+  const useAi = aiMatches.length > 0;
+  const competencies = useAi ? aiMatches : ruleBasedCompetencies(jdText, profile);
   const { score, breakdown } = calculateMatch(jdText, profile, competencies);
   const strengths=competencies.filter(c=>c.gap===0).map(c=>`${c.name}达到可独立完成小任务的水平`);
   const gaps=competencies.filter(c=>c.gap>0).map(c=>`${c.name}还缺少可验证成果`);
   const analyzedAt = new Date().toISOString();
-  const title = jdText.split(/\n/).find(Boolean)?.slice(0,30)||"目标岗位";
-  const result:JobAnalysis={title,summary:`识别到 ${competencies.length} 项核心能力。综合能力、证据、兴趣和约束后，当前匹配度为 ${score}%。`,competencies,matchScore:score,strengths,gaps,nextAction:gaps.length?`优先用 7 天微项目补强“${competencies.find(c=>c.gap>0)?.name}”，完成后再投递。`:"主要能力已经覆盖，可以开始针对 JD 整理简历证据。",profileFingerprint:profileFingerprint(profile),analyzedAt,breakdown,job:{id:crypto.randomUUID(),source:"manual",sourceUrl:"",company:"",title,city:"",rawText:jdText,createdAt:analyzedAt}};
+  const fallbackTitle = jdText.split(/\n/).map(line => line.trim()).find(Boolean)?.slice(0,30)||"目标岗位";
+  const title = llm.extraction?.title || fallbackTitle;
+  const summary = llm.extraction?.summary || `识别到 ${competencies.length} 项核心能力。综合能力、证据、兴趣和约束后，当前匹配度为 ${score}%。`;
+  const result:JobAnalysis={title,summary,analysisMode:useAi?"ai":"rules",analysisNotice:llm.notice || (!useAi && llm.extraction ? "AI 返回的引用无法在 JD 原文中核验，已使用规则分析。" : undefined),analysisModel:useAi?getLlmConfig().model:undefined,competencies,matchScore:score,strengths,gaps,nextAction:gaps.length?`优先用 7 天微项目补强“${competencies.find(c=>c.gap>0)?.name}”，完成后再投递。`:"主要能力已经覆盖，可以开始针对 JD 整理简历证据。",profileFingerprint:profileFingerprint(profile),analyzedAt,breakdown,job:{id:crypto.randomUUID(),source:"manual",sourceUrl:"",company:"",title,city:"",rawText:jdText,createdAt:analyzedAt}};
   return jsonResponse(result);
 }
 
