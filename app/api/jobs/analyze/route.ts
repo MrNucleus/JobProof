@@ -75,8 +75,7 @@ export async function POST(request:Request){
   const gaps=competencies.filter(c=>c.gap>0).map(c=>`${c.name}还缺少可验证成果`);
   const analyzedAt = new Date().toISOString();
   const title = jdText.split(/\n/).find(Boolean)?.slice(0,30)||"目标岗位";
-  const result:JobAnalysis={title,summary:`识别到 ${competencies.length} 项核心能力。综合能力、证据、兴趣和约束后，当前匹配度为 ${score}%。`,competencies,matchScore:score,strengths,gaps,nextAction:gaps.length?`优先用 7 天微项目补强“${competencies.find(c=>c.gap>0)?.name}”，完成后再投递。`:"主要能力已经覆盖，可以开始针对 JD 整理简历证据。",profileFingerprint:profileFingerprint(profile),analyzedAt,breakdown,job:{id:crypto.randomUUID(),source:"manual",sourceUrl:"",company:"",title,city:"",rawText:jdText,createdAt:analyzedAt}};
+  const result:JobAnalysis={title,summary:`识别到 ${competencies.length} 项核心能力。综合能力、证据、兴趣和约束后，当前匹配度为 ${score}%。`,competencies,matchScore:score,strengths,gaps,nextAction:gaps.length?`优先用 7/14 天微项目补强“${competencies.find(c=>c.gap>0)?.name}”，完成后再投递。`:"主要能力已经覆盖，可以开始针对 JD 整理简历证据。",profileFingerprint:profileFingerprint(profile),analyzedAt,breakdown,job:{id:crypto.randomUUID(),source:"manual",sourceUrl:"",company:"",title,city:"",rawText:jdText,createdAt:analyzedAt}};
   return jsonResponse(result);
 }
-
 
