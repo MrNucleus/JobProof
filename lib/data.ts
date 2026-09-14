@@ -19,7 +19,7 @@ export const defaultProfile: UserProfile = {
   name: "新同学",
   grade: "大二",
   major: "市场营销",
-  cities: "上海、杭州、远程",
+  cities: "上海、杭州",
   weeklyHours: 5,
   roleFamilies: ["产品", "运营"],
   competencies: competencyCatalog.map((item, index) => ({

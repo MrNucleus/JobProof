@@ -137,14 +137,24 @@ function readLegacy<T>(key: string, schema: z.ZodType<T>): T | null {
   }
 }
 
+function migrateDefaultCityValue(profile: UserProfile) {
+  if (profile.cities !== "上海、杭州、远程") return profile;
+  return { ...profile, cities: "上海、杭州" };
+}
+
 export const profileRepository = {
   get(): UserProfile {
     const current = read(PROFILE_V2_KEY, UserProfileSchema);
-    if (current) return current;
+    if (current) {
+      const migrated = migrateDefaultCityValue(current);
+      if (migrated !== current) write(PROFILE_V2_KEY, UserProfileSchema, migrated);
+      return migrated;
+    }
     const legacy = readLegacy(PROFILE_V1_KEY, UserProfileSchema);
     if (legacy) {
-      write(PROFILE_V2_KEY, UserProfileSchema, legacy);
-      return legacy;
+      const migrated = migrateDefaultCityValue(legacy);
+      write(PROFILE_V2_KEY, UserProfileSchema, migrated);
+      return migrated;
     }
     return UserProfileSchema.parse(defaultProfile);
   },
