@@ -17,7 +17,7 @@ export default function HomePage() {
         <div className="step"><span className="step-n">4</span><div><b>生成求职证据</b><small>简历、作品集、面试故事</small></div></div>
       </div>
     </section>
-    <div className="section-head"><h2>首版解决三个关键问题</h2><p>聚焦产品与运营实习</p></div>
+    <div className="section-head"><h2>v0.2 解决三个关键问题</h2><p>聚焦产品与运营实习</p></div>
     <section className="feature-grid">
       <div className="card feature"><div className="feature-mark">◎</div><h3>我究竟会什么？</h3><p>能力和证据分开确认，没有证据的能力会被标记为待验证。</p></div>
       <div className="card feature"><div className="feature-mark">↗</div><h3>这份 JD 适合我吗？</h3><p>展示匹配点、能力缺口和硬性风险，不提供黑箱式推荐。</p></div>

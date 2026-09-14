@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { ZhihuHotItem } from "@/lib/zhihu/types";
+import type { ZhihuHotItem } from "@/lib/zhihu-oauth";
 
 export default function HotList() {
   const [items, setItems] = useState<ZhihuHotItem[]>([]);
