@@ -4,8 +4,12 @@ import { z } from "zod";
 import { CompetencyKeySchema, type CompetencyKey } from "@/lib/domain";
 
 const LLM_TIMEOUT_MS = 15_000;
-const DEFAULT_LLM_BASE_URL = "https://api.openai.com/v1";
-const DEFAULT_LLM_MODEL = "gpt-4o-mini";
+// DeepSeek's OpenAI-compatible API is the default provider for v0.5.
+// The legacy `deepseek-v4-flash` name may still be accepted by DeepSeek,
+// but its corresponding model is retired. `deepseek-flash` is the current
+// API model name and can be overridden with LLM_MODEL when needed.
+const DEFAULT_LLM_BASE_URL = "https://api.deepseek.com";
+const DEFAULT_LLM_MODEL = "deepseek-flash";
 
 const AiCompetencySchema = z.object({
   key: CompetencyKeySchema,
@@ -138,6 +142,7 @@ export async function analyzeJobWithLlm(jdText: string): Promise<AiJobExtraction
       body: JSON.stringify({
         model: config.model,
         temperature: 0,
+        thinking: { type: "disabled" },
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: systemPrompt() },

@@ -6,7 +6,7 @@
 
 - 注册阶段建立个人能力画像
 - 个人中心展示能力、证据、微项目和推荐岗位
-- 粘贴产品/运营 JD，使用本地规则完成结构化分析
+- 粘贴产品/运营 JD，使用 DeepSeek V4 Flash 进行结构化分析；未配置密钥时自动回退本地规则
 - 根据能力缺口生成 7 天微项目
 - 本地浏览器存储能力画像，不需要账号或远程数据库
 
@@ -36,7 +36,7 @@ npm run dev
 ## 后续版本
 
 1. 接入 Supabase Auth、PostgreSQL 和 Storage
-2. 把规则分析替换为结构化 LLM Adapter
+2. 接入结构化 LLM Adapter（当前 v0.5 已支持 DeepSeek V4 Flash）
 3. 添加真实岗位数据、证据上传与求职表达生成
 
 ## v0.4 知乎驱动微项目选题
@@ -48,6 +48,20 @@ npm run dev
 - 文档：[docs/v0.4-知乎驱动微项目选题.md](docs/v0.4-知乎驱动微项目选题.md)
 
 未配置知乎 Access Secret 时，页面继续提供本地主题选项；项目不进行网页抓取或知乎内容镜像。
+
+## v0.5 结构化 AI JD 分析
+
+当前 AI 适配器默认使用 DeepSeek 官方 OpenAI-compatible API：
+
+```env
+LLM_API_KEY=你的DeepSeek API Key
+LLM_BASE_URL=https://api.deepseek.com
+LLM_MODEL=deepseek-flash
+```
+
+`deepseek-flash` 是 DeepSeek 当前 API 推荐的 Flash 模型名；`deepseek-v4-flash` 属于旧名称（对应模型已退休），不建议用于新部署。密钥仅配置在本地 `.env.local` 或部署平台的服务端环境变量中，不要使用 `NEXT_PUBLIC_` 前缀。
+
+- 文档：[docs/v0.5-结构化AI分析.md](docs/v0.5-结构化AI分析.md)
 
 ## v0.3 云端数据基础
 
