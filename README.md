@@ -39,6 +39,16 @@ npm run dev
 2. 把规则分析替换为结构化 LLM Adapter
 3. 添加真实岗位数据、证据上传与求职表达生成
 
+## v0.4 知乎驱动微项目选题
+
+在完成能力确认和 JD 分析后，微项目页支持按需调用知乎站内搜索，生成 3 个基于真实讨论的选题候选。用户选择后，候选的知乎标题、短摘要和来源链接会随计划保存，并在执行页展示。
+
+- 接口：`POST /api/zhihu/project-context`
+- 配置：服务端 `ZHIHU_ACCESS_SECRET`
+- 文档：[docs/v0.4-知乎驱动微项目选题.md](docs/v0.4-知乎驱动微项目选题.md)
+
+未配置知乎 Access Secret 时，页面继续提供本地主题选项；项目不进行网页抓取或知乎内容镜像。
+
 ## v0.3 云端数据基础
 
 当前分支已加入 Supabase SSR 客户端、Magic Link 服务端接口、画像云端读写 API、数据库迁移和 RLS 策略。未配置 Supabase 时，现有 localStorage 演示流程保持不变。
