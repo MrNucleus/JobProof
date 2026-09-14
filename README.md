@@ -19,6 +19,12 @@ npm run dev
 
 打开 <http://localhost:3000>。
 
+## 公网演示
+
+- 产品地址：<https://jobproof-mvp.netlify.app>
+- 知乎用户中心：<https://jobproof-mvp.netlify.app/account>
+- 知乎 OAuth 回调地址：<https://jobproof-mvp.netlify.app/api/auth/callback>
+
 ## 当前架构
 
 - Next.js 14 App Router
