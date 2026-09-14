@@ -49,7 +49,7 @@ export default function BackgroundPage() {
           <div className="field"><label>每周可投入时间</label><select value={profile.weeklyHours} onChange={e => setProfile({ ...profile, weeklyHours: Number(e.target.value) })}><option value={3}>3 小时</option><option value={5}>5 小时</option><option value={8}>8 小时以上</option></select></div>
         </div>
         <hr className="divider" />
-        <h3>首版想探索哪些岗位？</h3>
+        <h3>当前想探索哪些岗位？</h3>
         <p className="muted">可以多选。目前先聚焦产品与运营岗位。</p>
         <div className="role-pills">
           {["产品", "运营"].map(role => <button key={role} type="button" className={`role-pill ${profile.roleFamilies.includes(role) ? "selected" : ""}`} onClick={() => toggleRole(role)}>{role}</button>)}

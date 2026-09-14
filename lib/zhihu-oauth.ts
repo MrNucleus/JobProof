@@ -48,6 +48,13 @@ export type ZhihuContent = {
   summary: string;
 };
 
+export type ZhihuHotItem = {
+  title: string;
+  url: string;
+  thumbnailUrl: string;
+  summary: string;
+};
+
 export type ZhihuSearchItem = {
   title: string;
   contentType: string;
@@ -313,5 +320,47 @@ export async function searchZhihu(query: string, count = 10): Promise<ZhihuSearc
       authorityLevel: String(value.AuthorityLevel ?? value.authorityLevel ?? ""),
       editTime: numberValue("editTime")
     } satisfies ZhihuSearchItem];
+  });
+}
+
+export async function getHotList(limit = 20): Promise<ZhihuHotItem[]> {
+  const config = getZhihuConfig();
+  if (!config.accessSecret) throw new ZhihuOAuthError("知乎热榜尚未配置 Access Secret。", 503);
+  const url = new URL("/api/v1/content/hot_list", "https://developer.zhihu.com");
+  url.searchParams.set("Limit", String(Math.min(30, Math.max(1, limit))));
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${config.accessSecret}`,
+        "X-Request-Timestamp": String(Math.floor(Date.now() / 1000))
+      },
+      cache: "no-store"
+    });
+  } catch {
+    throw new ZhihuOAuthError("无法连接知乎热榜服务，请稍后重试。", 502);
+  }
+  const raw = await readJson(response);
+  const code = raw.Code ?? raw.code;
+  if (typeof code === "number" && code !== 0 && code !== 20000) {
+    if (code === 20001 || code === 401) throw new ZhihuOAuthError("知乎热榜鉴权失败，请检查 Access Secret。", 401);
+    if (code === 30001 || code === 30002) throw new ZhihuOAuthError("知乎热榜当前受到频率或额度限制，请稍后再试。", 429);
+    throw new ZhihuOAuthError("知乎热榜暂时不可用，请稍后重试。", 502);
+  }
+  const data = unwrapData(raw);
+  const rawItems = data.Items ?? data.items;
+  if (!Array.isArray(rawItems)) return [];
+  return rawItems.flatMap(item => {
+    if (!item || typeof item !== "object") return [];
+    const value = item as Record<string, unknown>;
+    const title = String(value.Title ?? value.title ?? "").trim();
+    const urlValue = String(value.Url ?? value.url ?? "").trim();
+    if (!title || !urlValue) return [];
+    return [{
+      title,
+      url: urlValue,
+      thumbnailUrl: String(value.ThumbnailUrl ?? value.thumbnailUrl ?? ""),
+      summary: String(value.Summary ?? value.summary ?? "")
+    } satisfies ZhihuHotItem];
   });
 }
