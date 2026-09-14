@@ -7,7 +7,7 @@ import { OnboardingProgress } from "@/components/OnboardingProgress";
 import { competencyCatalog, defaultProfile } from "@/lib/data";
 import { competencyAnchors, levelLabels } from "@/lib/competency-anchors";
 import { loadProfile, saveProfile } from "@/lib/repository";
-import { onboardingRepository } from "@/lib/onboarding";
+import { getOnboardingReadiness, onboardingRepository } from "@/lib/onboarding";
 import { CompetencyKey, Interest, Level, UserProfile } from "@/lib/types";
 
 const interestLabels: Record<Interest, string> = { like: "喜欢", neutral: "可以尝试", dislike: "不想做" };
@@ -16,10 +16,17 @@ export default function AbilitiesPage() {
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile>(defaultProfile);
   const [confirmedKeys, setConfirmedKeys] = useState<string[]>([]);
+  const [checkingOrder, setCheckingOrder] = useState(true);
   useEffect(() => {
-    setProfile(loadProfile());
+    const currentProfile = loadProfile();
+    if (!getOnboardingReadiness(currentProfile).backgroundComplete) {
+      router.replace("/onboarding/background");
+      return;
+    }
+    setProfile(currentProfile);
     setConfirmedKeys(onboardingRepository.get().abilityConfirmedKeys);
-  }, []);
+    setCheckingOrder(false);
+  }, [router]);
 
   const confirmed = useMemo(() => confirmedKeys.length, [confirmedKeys]);
 
@@ -35,6 +42,8 @@ export default function AbilitiesPage() {
     onboardingRepository.saveAbilityProgress(profile, confirmedKeys as CompetencyKey[]);
     router.push("/onboarding/evidence");
   }
+
+  if (checkingOrder) return <div className="card account-loading">正在检查回答顺序…</div>;
 
   return (
     <>
@@ -60,4 +69,3 @@ export default function AbilitiesPage() {
     </>
   );
 }
-

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { OnboardingProgress } from "@/components/OnboardingProgress";
 import { competencyCatalog, defaultProfile } from "@/lib/data";
 import { loadProfile, saveProfile } from "@/lib/repository";
-import { onboardingRepository } from "@/lib/onboarding";
+import { getOnboardingReadiness, onboardingRepository } from "@/lib/onboarding";
 import { CompetencyKey, Level, UserProfile } from "@/lib/types";
 
 const evidenceLabels = ["暂无证据", "课程或社团", "个人项目", "实习或真实业务"];
@@ -15,11 +15,22 @@ export default function EvidencePage() {
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile>(defaultProfile);
   const [confirmedKeys, setConfirmedKeys] = useState<string[]>([]);
+  const [checkingOrder, setCheckingOrder] = useState(true);
   useEffect(() => {
     const currentProfile = loadProfile();
+    const readiness = getOnboardingReadiness(currentProfile);
+    if (!readiness.backgroundComplete) {
+      router.replace("/onboarding/background");
+      return;
+    }
+    if (!readiness.abilitiesComplete) {
+      router.replace("/onboarding/abilities");
+      return;
+    }
     setProfile(currentProfile);
     setConfirmedKeys(onboardingRepository.get().evidenceConfirmedKeys);
-  }, []);
+    setCheckingOrder(false);
+  }, [router]);
   const visible = useMemo(() => profile.competencies.map((item, index) => ({ item, index })).filter(({ item }) => item.level > 0), [profile]);
 
   function update(index: number, field: "evidenceLevel" | "evidenceNote", value: Level | string) {
@@ -35,6 +46,8 @@ export default function EvidencePage() {
     router.push("/onboarding/complete");
   }
 
+  if (checkingOrder) return <div className="card account-loading">正在检查回答顺序…</div>;
+
   return (
     <>
       <h1 className="page-title">哪些经历能证明这些能力？</h1>
@@ -42,7 +55,7 @@ export default function EvidencePage() {
       <OnboardingProgress current={3} />
       <section className="card panel onboarding-single">
         <div className="onboarding-heading"><div><span className="step-kicker">STEP 3 / 4</span><h2>事实与证据确认</h2></div><span className="muted">只追问你接触过的能力</span></div>
-        {visible.length === 0 ? <div className="empty-state"><h3>你还没有选择接触过的能力</h3><p>返回上一步确认至少一项能力，或者继续完成注册，之后用微项目从零开始。</p></div> : visible.map(({ item, index }) => {
+        {visible.length === 0 ? <div className="empty-state"><h3>你还没有选择接触过的能力</h3><p>返回上一步确认至少一项能力，或者继续完成能力确认，之后用微项目从零开始。</p></div> : visible.map(({ item, index }) => {
           const catalog = competencyCatalog.find(entry => entry.key === item.key)!;
           return <div className="evidence-form" key={item.key}>
             <div><b>{catalog.name}</b><small>你的自评：{["不了解", "接触过", "能独立完成小任务", "能交付完整结果"][item.level]}</small></div>
@@ -57,7 +70,5 @@ export default function EvidencePage() {
     </>
   );
 }
-
-
 
 
