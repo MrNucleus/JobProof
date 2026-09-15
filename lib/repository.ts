@@ -231,4 +231,3 @@ export const loadProfile = () => profileRepository.get();
 export const saveProfile = (profile: UserProfile) => profileRepository.save(profile);
 export const loadAnalysis = () => analysisRepository.get();
 export const saveAnalysis = (analysis: JobAnalysis) => analysisRepository.save(analysis);
-

@@ -1,17 +1,111 @@
 "use client";
+/* External Zhihu avatars are rendered directly so arbitrary provider hosts are not proxied by the app. */
+/* eslint-disable @next/next/no-img-element */
+
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import CloudProfilePanel from "@/components/CloudProfilePanel";
+
 type User = { uid: string; fullname: string; headline: string; description: string; avatarPath: string; url: string };
 type Page<T> = { items: T[]; paging: { isEnd: boolean; nextOffset?: string; totals?: number } };
 type Followee = { fullname: string; url: string; avatarUrl: string; headline: string; followerCount: number };
 type Content = { contentType: string; url: string; title: string; summary: string; likeCount: number; commentCount: number };
-function errorMessage(value: string | null) { if (!value) return ""; if (value === "oauth_not_configured") return "知乎登录尚未配置，请在部署平台添加 OAuth 环境变量。"; if (value === "invalid_state") return "登录请求已失效，请重新点击知乎登录。"; if (value === "missing_code") return "知乎没有返回授权码，请重新登录。"; try { return decodeURIComponent(value); } catch { return value; } }
+
+function errorMessage(value: string | null) {
+  if (!value) return "";
+  if (value === "oauth_not_configured") return "知乎登录尚未配置，请在部署平台添加 OAuth 环境变量。";
+  if (value === "invalid_state") return "登录请求已失效，请重新点击知乎登录。";
+  if (value === "missing_code") return "知乎没有返回授权码，请重新登录。";
+  try { return decodeURIComponent(value); } catch { return value; }
+}
+
 export default function AccountPage() {
-  const [user, setUser] = useState<User | null>(null), [loading, setLoading] = useState(true), [followees, setFollowees] = useState<Page<Followee> | null>(null), [contents, setContents] = useState<Page<Content> | null>(null), [followOffset, setFollowOffset] = useState("0"), [contentOffset, setContentOffset] = useState("0"), [error, setError] = useState(""), [queryError, setQueryError] = useState("");
-  useEffect(() => { const params = new URLSearchParams(window.location.search); setError(errorMessage(params.get("error"))); fetch("/api/auth/me", { cache: "no-store" }).then(r => r.json()).then(d => setUser(d.authenticated ? d.user : null)).catch(() => undefined).finally(() => setLoading(false)); }, []);
-  useEffect(() => { if (!user) return; fetch(`/api/zhihu/followees?offset=${followOffset}&limit=8`, { cache: "no-store" }).then(r => r.ok ? r.json() : Promise.reject(new Error("关注列表加载失败"))).then(f => { setFollowees((previous) => followOffset === "0" ? f : { ...f, items: [...(previous?.items ?? []), ...f.items] }); setQueryError(""); }).catch(e => setQueryError(e instanceof Error ? e.message : "关注列表加载失败，请确认 Access Secret 已配置。")); }, [user, followOffset]);
-  useEffect(() => { if (!user) return; fetch(`/api/zhihu/contents?offset=${contentOffset}&limit=6`, { cache: "no-store" }).then(r => r.ok ? r.json() : Promise.reject(new Error("创作列表加载失败"))).then(c => { setContents((previous) => contentOffset === "0" ? c : { ...c, items: [...(previous?.items ?? []), ...c.items] }); setQueryError(""); }).catch(e => setQueryError(e instanceof Error ? e.message : "创作列表加载失败，请确认 Access Secret 已配置。")); }, [user, contentOffset]);
-  if (loading) return <div className="account-loading card">正在读取登录状态…</div>;
-  if (!user) return <section className="account-landing"><div className="account-orbit">知</div><span className="eyebrow">YOUR ZHIHU PROFILE</span><h1>连接知乎，带回你的创作证据</h1><p>登录后，JobProof 会在右上角展示你的知乎头像，并在本页汇总你的关注与公开创作列表。</p>{error && <div className="error account-error">{error}</div>}<Link className="btn btn-primary" href="/api/auth/login">使用知乎登录 →</Link><small>OAuth Token 仅保存在服务端会话，不会暴露给浏览器。</small></section>;
-  return <><div className="account-head"><div className="account-identity">{user.avatarPath ? <img className="account-avatar" src={user.avatarPath} alt="" /> : <div className="account-avatar account-avatar-fallback">{user.fullname.slice(0, 1)}</div>}<div><span className="eyebrow">知乎用户</span><h1>{user.fullname}</h1><p>{user.headline || "还没有填写一句话介绍"}</p></div></div>{user.url && <a className="btn btn-secondary" href={user.url} target="_blank" rel="noreferrer">查看知乎主页 ↗</a>}</div>{user.description && <section className="card account-bio"><b>个人介绍</b><p>{user.description}</p></section>}{queryError && <div className="error">{queryError} <span className="muted">登录基础信息仍可正常使用。</span></div>}<div className="account-columns"><section className="card account-section"><div className="card-head"><div><h2>我关注的人</h2><span className="muted">公开关注列表</span></div><span className="account-count">{followees?.paging.totals ?? "—"}</span></div>{followees?.items.length ? <div className="follow-list">{followees.items.map((item, i) => <a className="follow-item" href={item.url} target="_blank" rel="noreferrer" key={`${item.url}-${i}`}>{item.avatarUrl ? <img src={item.avatarUrl} alt="" /> : <div className="mini-avatar">{item.fullname.slice(0, 1)}</div>}<div><b>{item.fullname}</b><small>{item.headline || "知乎创作者"}</small></div><span>↗</span></a>)}</div> : <div className="empty-state"><p>{queryError ? "暂时无法读取关注列表" : "暂无公开关注数据"}</p></div>}{followees && !followees.paging.isEnd && <button className="btn btn-secondary full" onClick={() => setFollowOffset(followees.paging.nextOffset || String(Number(followOffset) + 8))}>加载更多关注</button>}</section><section className="card account-section"><div className="card-head"><div><h2>我的创作</h2><span className="muted">回答、文章与想法</span></div><span className="account-count">{contents?.paging.totals ?? "—"}</span></div>{contents?.items.length ? <div className="content-list">{contents.items.map((item, i) => <a className="content-item" href={item.url} target="_blank" rel="noreferrer" key={`${item.url}-${i}`}><span className="content-type">{item.contentType}</span><b>{item.title || "未命名创作"}</b><p>{item.summary || "暂无摘要"}</p><small>赞 {item.likeCount ?? 0} · 评论 {item.commentCount ?? 0}　↗</small></a>)}</div> : <div className="empty-state"><p>{queryError ? "暂时无法读取创作列表" : "暂无公开创作数据"}</p></div>}{contents && !contents.paging.isEnd && <button className="btn btn-secondary full" onClick={() => setContentOffset(contents.paging.nextOffset || String(Number(contentOffset) + 6))}>加载更多创作</button>}</section></div><div className="account-note">数据来自知乎开放平台公开范围接口 · 只展示昵称、头像、简介及公开列表 · <Link href="/dashboard">返回 JobProof 个人中心</Link></div></>;
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [followees, setFollowees] = useState<Page<Followee> | null>(null);
+  const [contents, setContents] = useState<Page<Content> | null>(null);
+  const [followOffset, setFollowOffset] = useState("0");
+  const [contentOffset, setContentOffset] = useState("0");
+  const [error, setError] = useState("");
+  const [queryError, setQueryError] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setError(errorMessage(params.get("error")));
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((data) => setUser(data.authenticated ? data.user : null))
+      .catch(() => undefined)
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (!user) return;
+    fetch(`/api/zhihu/followees?offset=${followOffset}&limit=8`, { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error("关注列表加载失败")))
+      .then((next: Page<Followee>) => {
+        setFollowees((previous) => followOffset === "0" ? next : { ...next, items: [...(previous?.items ?? []), ...next.items] });
+        setQueryError("");
+      })
+      .catch((reason) => setQueryError(reason instanceof Error ? reason.message : "关注列表加载失败，请确认 Access Secret 已配置。"));
+  }, [user, followOffset]);
+
+  useEffect(() => {
+    if (!user) return;
+    fetch(`/api/zhihu/contents?offset=${contentOffset}&limit=6`, { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error("创作列表加载失败")))
+      .then((next: Page<Content>) => {
+        setContents((previous) => contentOffset === "0" ? next : { ...next, items: [...(previous?.items ?? []), ...next.items] });
+        setQueryError("");
+      })
+      .catch((reason) => setQueryError(reason instanceof Error ? reason.message : "创作列表加载失败，请确认 Access Secret 已配置。"));
+  }, [user, contentOffset]);
+
+  return <>
+    <CloudProfilePanel />
+
+    {loading && <div className="account-loading card">正在读取知乎登录状态…</div>}
+
+    {!loading && !user && (
+      <section className="account-landing">
+        <div className="account-orbit">知</div>
+        <span className="eyebrow">YOUR ZHIHU PROFILE</span>
+        <h1>连接知乎，带回你的创作证据</h1>
+        <p>登录后，JobProof 会在右上角展示你的知乎头像，并把关注的人与公开创作列表汇总到个人中心。</p>
+        {error && <div className="error account-error">{error}</div>}
+        <Link className="btn btn-primary" href="/api/auth/login">使用知乎登录 →</Link>
+        <small>知乎 OAuth 与 JobProof 云端账号彼此独立，Token 仅保存在服务端会话。</small>
+      </section>
+    )}
+
+    {!loading && user && <>
+      <div className="account-head">
+        <div className="account-identity">
+          {user.avatarPath ? <img className="account-avatar" src={user.avatarPath} alt="" /> : <div className="account-avatar account-avatar-fallback">{user.fullname.slice(0, 1)}</div>}
+          <div><span className="eyebrow">知乎用户</span><h1>{user.fullname}</h1><p>{user.headline || "还没有填写一句话介绍"}</p></div>
+        </div>
+        {user.url && <a className="btn btn-secondary" href={user.url} target="_blank" rel="noreferrer">查看知乎主页 ↗</a>}
+      </div>
+      {user.description && <section className="card account-bio"><b>个人介绍</b><p>{user.description}</p></section>}
+      {queryError && <div className="error">{queryError} <span className="muted">登录基础信息仍可正常使用。</span></div>}
+      <div className="account-columns">
+        <section className="card account-section">
+          <div className="card-head"><div><h2>我关注的人</h2><span className="muted">公开关注列表</span></div><span className="account-count">{followees?.paging.totals ?? "—"}</span></div>
+          {followees?.items.length ? <div className="follow-list">{followees.items.map((item, index) => <a className="follow-item" href={item.url} target="_blank" rel="noreferrer" key={`${item.url}-${index}`}>
+            {item.avatarUrl ? <img src={item.avatarUrl} alt="" /> : <div className="mini-avatar">{item.fullname.slice(0, 1)}</div>}
+            <div><b>{item.fullname}</b><small>{item.headline || "知乎创作者"}</small></div><span>↗</span>
+          </a>)}</div> : <div className="empty-state"><p>{queryError ? "暂时无法读取关注列表" : "暂无公开关注数据"}</p></div>}
+          {followees && !followees.paging.isEnd && <button className="btn btn-secondary full" onClick={() => setFollowOffset(followees.paging.nextOffset || String(Number(followOffset) + 8))}>加载更多关注</button>}
+        </section>
+        <section className="card account-section">
+          <div className="card-head"><div><h2>我的创作</h2><span className="muted">回答、文章与想法</span></div><span className="account-count">{contents?.paging.totals ?? "—"}</span></div>
+          {contents?.items.length ? <div className="content-list">{contents.items.map((item, index) => <a className="content-item" href={item.url} target="_blank" rel="noreferrer" key={`${item.url}-${index}`}>
+            <span className="content-type">{item.contentType}</span><b>{item.title || "未命名创作"}</b><p>{item.summary || "暂无摘要"}</p><small>赞 {item.likeCount ?? 0} · 评论 {item.commentCount ?? 0}　↗</small>
+          </a>)}</div> : <div className="empty-state"><p>{queryError ? "暂时无法读取创作列表" : "暂无公开创作数据"}</p></div>}
+          {contents && !contents.paging.isEnd && <button className="btn btn-secondary full" onClick={() => setContentOffset(contents.paging.nextOffset || String(Number(contentOffset) + 6))}>加载更多创作</button>}
+        </section>
+      </div>
+      <div className="account-note">数据来自知乎开放平台公开范围接口 · 只展示昵称、头像、简介及公开列表 · <Link href="/dashboard">返回 JobProof 个人中心</Link></div>
+    </>}
+  </>;
 }

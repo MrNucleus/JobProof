@@ -1,0 +1,9 @@
+{
+  "action": "generate",
+  "error": "ChongPlus image service is temporarily unavailable. Please retry later.",
+  "output_dir": "/Users/yanzining/Documents/ChatGPT/\u77e5\u4e4e\u9ed1\u5ba2\u677e/JobProof/public/chongplus-cover-output",
+  "request_id": "20260913-221308-cac2db77",
+  "started_at": "2026-09-13T14:13:08Z",
+  "state": "failed",
+  "updated_at": "2026-09-13T14:13:10Z"
+}

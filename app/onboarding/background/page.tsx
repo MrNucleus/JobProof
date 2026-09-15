@@ -54,23 +54,10 @@ export default function BackgroundPage() {
           <div className="field"><label>每周可投入时间</label><select value={profile.weeklyHours} onChange={e => setProfile({ ...profile, weeklyHours: Number(e.target.value) })}><option value={3}>3 小时</option><option value={5}>5 小时</option><option value={8}>8 小时以上</option></select></div>
         </div>
         <hr className="divider" />
-        <h3>你想探索哪些岗位方向？</h3>
-        <p className="muted">可以多选，目前先聚焦产品与运营两个方向。</p>
-        <div className="role-pills role-option-grid" role="group" aria-label="想探索的岗位方向">
-          {roleOptions.map(option => {
-            const selected = profile.roleFamilies.includes(option.value);
-            return <button
-              key={option.value}
-              type="button"
-              aria-pressed={selected}
-              className={`role-pill role-option ${selected ? "selected" : ""}`}
-              onClick={() => toggleRole(option.value)}
-            >
-              <span className="role-option-icon" aria-hidden="true">{option.icon}</span>
-              <span className="role-option-copy"><strong>{option.title}</strong><small>{option.description}</small></span>
-              <span className="role-option-check" aria-hidden="true">✓</span>
-            </button>;
-          })}
+        <h3>当前想探索哪些岗位？</h3>
+        <p className="muted">可以多选。目前先聚焦产品与运营岗位。</p>
+        <div className="role-pills">
+          {["产品", "运营"].map(role => <button key={role} type="button" className={`role-pill ${profile.roleFamilies.includes(role) ? "selected" : ""}`} onClick={() => toggleRole(role)}>{role}</button>)}
         </div>
         <div className="actions onboarding-actions"><span className="muted">本地流程数据保存在当前浏览器</span><button className="btn btn-primary" type="submit">下一步：能力自评 →</button></div>
       </form>

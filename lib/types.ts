@@ -10,6 +10,7 @@ export type {
   Level,
   MatchBreakdown,
   Plan,
+  ProjectSource,
   Task,
   UserProfile
 } from "./domain";

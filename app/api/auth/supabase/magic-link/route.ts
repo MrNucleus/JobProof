@@ -23,7 +23,7 @@ export async function POST(request: Request) {
   const origin = new URL(request.url).origin;
   const { error } = await supabase.auth.signInWithOtp({
     email: parsed.data.email,
-    options: { emailRedirectTo: `${origin}/api/auth/supabase/callback?next=/dashboard` }
+    options: { emailRedirectTo: `${origin}/api/auth/supabase/callback?next=${encodeURIComponent("/account?cloud=connected")}` }
   });
   if (error) return NextResponse.json({ message: "登录链接发送失败，请稍后重试。" }, { status: 502 });
   return NextResponse.json({ sent: true });

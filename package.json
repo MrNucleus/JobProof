@@ -1,13 +1,17 @@
 {
   "name": "jobproof",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "lint": "eslint . --ext .js,.mjs,.ts,.tsx --max-warnings=0 --ignore-pattern .next --ignore-pattern node_modules",
+    "typecheck": "tsc --noEmit",
+    "check:structure": "node scripts/structure-check.mjs",
+    "test:unit": "node --test tests/*.test.mjs",
+    "test": "npm run check:structure && npm run test:unit && npm run typecheck",
+    "test:smoke": "node scripts/smoke-test.mjs"
   },
   "dependencies": {
     "@netlify/blobs": "^11.0.3",

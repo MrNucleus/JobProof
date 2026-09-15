@@ -74,6 +74,9 @@ export const MatchBreakdownSchema = z.object({
 export const JobAnalysisSchema = z.object({
   title: z.string(),
   summary: z.string(),
+  analysisMode: z.enum(["ai", "rules"]).optional(),
+  analysisNotice: z.string().max(300).optional(),
+  analysisModel: z.string().max(80).optional(),
   competencies: z.array(JobCompetencySchema),
   matchScore: z.number().min(0).max(100),
   strengths: z.array(z.string()),
@@ -113,7 +116,18 @@ export const PlanSchema = z.object({
   updatedAt: z.string().default(""),
   theme: z.string().default(""),
   jobTitle: z.string().default(""),
-  totalMinutes: z.number().int().nonnegative().default(0)
+  totalMinutes: z.number().int().nonnegative().default(0),
+  sources: z.array(z.object({
+    provider: z.literal("zhihu"),
+    sourceId: z.string().min(1),
+    title: z.string(),
+    url: z.string().url(),
+    excerpt: z.string().max(300),
+    authorName: z.string(),
+    authorityLevel: z.string(),
+    engagement: z.number().int().nonnegative(),
+    retrievedAt: z.string()
+  })).default([])
 });
 
 export const EvidenceSchema = z.object({
@@ -160,7 +174,6 @@ export type MatchBreakdown = z.infer<typeof MatchBreakdownSchema>;
 export type JobAnalysis = z.infer<typeof JobAnalysisSchema>;
 export type Task = z.infer<typeof TaskSchema>;
 export type Plan = z.infer<typeof PlanSchema>;
+export type ProjectSource = z.infer<typeof PlanSchema>["sources"][number];
 export type Evidence = z.infer<typeof EvidenceSchema>;
 export type Expression = z.infer<typeof ExpressionSchema>;
-
-

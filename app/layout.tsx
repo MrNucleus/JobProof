@@ -23,6 +23,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
                 <Link href="/plan">微项目</Link>
                 <Link href="/evidence">证据</Link>
                 <Link href="/expressions">求职表达</Link>
+                <Link href="/zhihu-hot">知乎热榜</Link>
               </div>
               <AuthMenu />
             </nav>

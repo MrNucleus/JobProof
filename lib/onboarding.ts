@@ -155,5 +155,3 @@ export function subscribeToOnboarding(callback: () => void) {
     window.removeEventListener(ONBOARDING_EVENT, callback);
   };
 }
-
-
