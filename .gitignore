@@ -1,0 +1,10 @@
+node_modules
+.next
+.netlify
+out
+.env
+.env.local
+npm-debug.log*
+.DS_Store
+*.tsbuildinfo
+deno.lock
