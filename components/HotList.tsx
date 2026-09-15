@@ -1,9 +1,10 @@
 "use client";
-/* External Zhihu thumbnails are rendered directly so arbitrary provider hosts are not proxied by the app. */
-/* eslint-disable @next/next/no-img-element */
 
 import { useCallback, useEffect, useState } from "react";
 import type { ZhihuHotItem } from "@/lib/zhihu-oauth";
+
+/* External Zhihu thumbnails are intentionally rendered directly; they are not proxied by JobProof. */
+/* eslint-disable @next/next/no-img-element */
 
 export default function HotList() {
   const [items, setItems] = useState<ZhihuHotItem[]>([]);
@@ -15,7 +16,7 @@ export default function HotList() {
     setError("");
     try {
       const response = await fetch("/api/zhihu/hot?limit=20", { cache: "no-store" });
-      const result = await response.json();
+      const result = await response.json() as { items?: ZhihuHotItem[]; message?: string };
       if (!response.ok) throw new Error(result.message || "热榜获取失败");
       setItems(result.items || []);
     } catch (reason) {
@@ -39,7 +40,7 @@ export default function HotList() {
           <a href={item.url} target="_blank" rel="noreferrer" className="hot-copy">
             <h2>{item.title}</h2>
             <p>{item.summary || "打开知乎查看完整讨论"}</p>
-            <span>在知乎查看</span>
+            <span>在知乎查看 ↗</span>
           </a>
           {item.thumbnailUrl ? <img src={item.thumbnailUrl} alt="" /> : <div className="hot-placeholder">知乎</div>}
         </li>

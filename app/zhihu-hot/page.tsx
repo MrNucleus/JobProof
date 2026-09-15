@@ -14,7 +14,7 @@ export default function ZhihuHotPage() {
           <h1 className="page-title">知乎热榜</h1>
           <p className="page-subtitle">从真实讨论中发现行业议题，也为调研、分析和内容项目寻找素材。</p>
         </div>
-        <a className="btn btn-secondary" href="https://www.zhihu.com/hot" target="_blank" rel="noreferrer">打开知乎</a>
+        <a className="btn btn-secondary" href="https://www.zhihu.com/hot" target="_blank" rel="noreferrer">打开知乎 ↗</a>
       </div>
       <HotList />
     </>

@@ -1,10 +1,23 @@
-# JobProof v0.2
+# JobProof v0.5
 
 JobProof（能力证据工坊）帮助大学生把目标岗位 JD 转化为能力差距、可执行微项目和可展示的求职证据。
 
 ![JobProof 能力证据工坊](public/jobproof-cover-16x9-final.png)
 
 核心链路：
+
+- 注册阶段建立个人能力画像
+- 个人中心展示能力、证据、微项目和推荐岗位
+- 粘贴产品/运营 JD，使用 DeepSeek Flash 进行结构化分析；未配置密钥时自动回退本地规则
+- 根据能力缺口生成 7 天微项目
+- 本地浏览器存储能力画像，不需要账号或远程数据库
+
+## 版本时间线
+
+- **v0.5（当前）**：结构化 AI JD 分析，支持 DeepSeek Flash，并在 AI 不可用时自动回退规则引擎。
+- **v0.4**：知乎驱动微项目选题，基于热榜与站内讨论生成候选主题。
+- **v0.3**：Supabase 云端数据基础、Magic Link 登录和画像云端读写。
+- **v0.2**：完成 onboarding、JD 匹配、微项目、证据工作台和求职表达核心链路。
 
 ```text
 目标 JD → 能力拆解与匹配解释 → 7/14 天微项目 → 证据完整度 → 求职表达
@@ -34,7 +47,13 @@ npm run dev
 
 打开 <http://localhost:3000>。
 
-常用命令：
+## 公网演示
+
+- 产品地址：<https://jobproof-mvp.netlify.app>
+- 知乎用户中心：<https://jobproof-mvp.netlify.app/account>
+- 知乎 OAuth 回调地址：<https://jobproof-mvp.netlify.app/api/auth/callback>
+
+## 常用命令
 
 ```bash
 npm run check:structure  # 检查 v0.2 入口、文档、素材和忽略规则
@@ -61,6 +80,45 @@ npm run test:smoke       # 启动生产服务并验证 HTTP 核心接口
 | `/expressions` | 生成和编辑求职表达 |
 | `/account` | 知乎登录、用户信息、关注和创作列表 |
 | `/zhihu-hot` | 知乎热榜 |
+后续方向：
+
+1. 持续完善 Supabase Auth、PostgreSQL 和 Storage
+2. 扩展可替换的结构化 LLM Adapter
+3. 添加真实岗位数据、证据上传与求职表达生成
+
+## v0.4 知乎驱动微项目选题
+
+在完成能力确认和 JD 分析后，微项目页支持按需调用知乎站内搜索，生成 3 个基于真实讨论的选题候选。用户选择后，候选的知乎标题、短摘要和来源链接会随计划保存，并在执行页展示。
+
+- 接口：`POST /api/zhihu/project-context`
+- 配置：服务端 `ZHIHU_ACCESS_SECRET`
+- 文档：[docs/v0.4-知乎驱动微项目选题.md](docs/v0.4-知乎驱动微项目选题.md)
+
+未配置知乎 Access Secret 时，页面继续提供本地主题选项；项目不进行网页抓取或知乎内容镜像。
+
+## v0.5 结构化 AI JD 分析
+
+当前 AI 适配器默认使用 DeepSeek 官方 OpenAI-compatible API：
+
+```env
+LLM_API_KEY=你的DeepSeek API Key
+LLM_BASE_URL=https://api.deepseek.com
+LLM_MODEL=deepseek-flash
+```
+
+`deepseek-flash` 是 DeepSeek 当前 API 推荐的 Flash 模型名；`deepseek-v4-flash` 属于旧名称（对应模型已退休），不建议用于新部署。密钥仅配置在本地 `.env.local` 或部署平台的服务端环境变量中，不要使用 `NEXT_PUBLIC_` 前缀。
+
+- 文档：[docs/v0.5-结构化AI分析.md](docs/v0.5-结构化AI分析.md)
+
+## v0.3 云端数据基础
+
+当前分支已加入 Supabase SSR 客户端、Magic Link 服务端接口、画像云端读写 API、数据库迁移和 RLS 策略。未配置 Supabase 时，现有 localStorage 演示流程保持不变。
+
+- 配置文档：[docs/v0.3-云端数据基础.md](docs/v0.3-云端数据基础.md)
+- 数据库迁移：[supabase/migrations/202609140001_jobproof_v03.sql](supabase/migrations/202609140001_jobproof_v03.sql)
+- 画像 API：`GET/PUT /api/profile`
+
+产品与技术文档位于仓库的 `docs` 目录。
 
 服务端 Route Handlers：
 

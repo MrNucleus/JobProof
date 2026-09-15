@@ -1,5 +1,5 @@
 import { competencyCatalog } from "./data";
-import { CompetencyKey, JobAnalysis, Plan, Task, UserProfile } from "./domain";
+import { CompetencyKey, JobAnalysis, Plan, ProjectSource, Task, UserProfile } from "./domain";
 import { profileFingerprint } from "./profile-fingerprint";
 
 type DurationDays = 7 | 14;
@@ -9,6 +9,7 @@ type PlanInput = {
   targetCompetency: CompetencyKey;
   durationDays: DurationDays;
   theme: string;
+  sources?: ProjectSource[];
 };
 
 type PracticeTemplate = {
@@ -136,6 +137,7 @@ export function generatePlan(input: PlanInput): Plan {
     startedAt: null,
     theme,
     jobTitle: analysis.title,
-    totalMinutes
+    totalMinutes,
+    sources: input.sources || []
   };
 }
