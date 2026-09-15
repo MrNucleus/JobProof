@@ -14,19 +14,34 @@ export default function CompletePage() {
   const [profile, setProfile] = useState<UserProfile>(defaultProfile);
   const [readyToConfirm, setReadyToConfirm] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [checkingOrder, setCheckingOrder] = useState(true);
 
   useEffect(() => {
     const currentProfile = loadProfile();
     const readiness = getOnboardingReadiness(currentProfile);
+    if (!readiness.backgroundComplete) {
+      router.replace("/onboarding/background");
+      return;
+    }
+    if (!readiness.abilitiesComplete) {
+      router.replace("/onboarding/abilities");
+      return;
+    }
+    if (!readiness.evidenceComplete) {
+      router.replace("/onboarding/evidence");
+      return;
+    }
     setProfile(currentProfile);
     setReadyToConfirm(readiness.evidenceComplete);
     setConfirmed(readiness.fullyConfirmed);
-  }, []);
+    setCheckingOrder(false);
+  }, [router]);
 
   const rows = useMemo(() => profile.competencies
     .filter(item => item.level > 0)
     .map(item => ({ ...item, catalog: competencyCatalog.find(entry => entry.key === item.key)! })), [profile]);
   const verified = rows.filter(item => item.evidenceLevel > 0 && item.evidenceNote.trim()).length;
+  const pending = rows.length - verified;
 
   function confirmAndOpen(href: string) {
     if (!readyToConfirm) return;
@@ -34,6 +49,8 @@ export default function CompletePage() {
     setConfirmed(true);
     router.push(href);
   }
+
+  if (checkingOrder) return <div className="card account-loading">正在检查回答顺序…</div>;
 
   return (
     <>
@@ -44,10 +61,14 @@ export default function CompletePage() {
         <section className="card panel">
           <div className="onboarding-heading"><div><span className="step-kicker">STEP 4 / 4</span><h2>{profile.name}的能力确认表</h2></div><Link className="btn btn-link" href="/onboarding/abilities">修改能力</Link></div>
           <div className="profile-summary"><span>{profile.grade}</span><span>{profile.major}</span><span>{profile.cities}</span><span>每周 {profile.weeklyHours} 小时</span></div>
-          <div className="summary-stats"><div><strong>{rows.length}</strong><span>项接触过的能力</span></div><div><strong>{verified}</strong><span>项已有事实证据</span></div><div><strong>{rows.length - verified}</strong><span>项等待微项目验证</span></div></div>
+          <div className="summary-stats"><div><strong>{rows.length}</strong><span>项接触过的能力</span></div><div><strong>{verified}</strong><span>项已有事实证据</span></div><div><strong>{pending}</strong><span>项待补充或验证</span></div></div>
           <div className="ability-table">
             <div className="ability-table-head"><span>能力</span><span>自评</span><span>证据</span><span>系统判断</span></div>
-            {rows.map(item => <div className="ability-table-row" key={item.key}><b>{item.catalog.name}</b><span>{item.level}/3</span><span>{item.evidenceLevel}/3</span><span className={item.evidenceLevel > 0 && item.evidenceNote.trim() ? "text-good" : "text-warn"}>{item.evidenceLevel > 0 && item.evidenceNote.trim() ? "已有基础证据" : "建议安排验证任务"}</span></div>)}
+            {rows.map(item => {
+              const hasFactEvidence = item.evidenceLevel > 0 && item.evidenceNote.trim();
+              const judgment = hasFactEvidence ? "已有基础证据" : item.evidenceLevel > 0 ? "需要补充事实" : "建议安排验证任务";
+              return <div className="ability-table-row" key={item.key}><b>{item.catalog.name}</b><span>{item.level}/3</span><span>{item.evidenceLevel}/3</span><span className={hasFactEvidence ? "text-good" : "text-warn"}>{judgment}</span></div>;
+            })}
           </div>
         </section>
         <aside className="entry-column">
